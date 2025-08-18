@@ -58,6 +58,31 @@
                             <a href="/game" class="btn btn-primary">Play Game</a>
                         </div>
                     </div>
+
+                    <!-- User stats for logged in users -->
+                    <div th:if="${isAuthenticated}" class="alert alert-light mt-4">
+                        <h6>📊 Your Account Stats:</h6>
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <strong>Customer Points:</strong><br>
+                                <span th:text="${currentUser.customerPoints}" class="h5 text-warning">0</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Highest Score:</strong><br>
+                                <span th:text="${currentUser.highestGameScore}" class="h5 text-info">0</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Member Since:</strong><br>
+                                <span th:text="${#temporals.format(currentUser.registrationDate, 'MMM yyyy')}" class="h6 text-muted">Date</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Account Status:</strong><br>
+                                <span th:if="${currentUser.enabled}" class="badge bg-success">Active</span>
+                                <span th:unless="${currentUser.enabled}" class="badge bg-danger">Disabled</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
