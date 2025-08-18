@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${store.name} + ' - Chain Store'">Store Details - Chain Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">🏪 Chain Store</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/products">Products</a>
+            <a class="nav-link" href="/stores">Stores</a>
+            <a class="nav-link" href="/profile">Profile</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/stores">Stores</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/stores/city/{city}(city=${store.city})}" th:text="${store.city}">City</a>
+            </li>
+            <li class="breadcrumb-item active" th:text="${store.name}">Store Name</li>
+        </ol>
+    </nav>
+
+    <!-- Success/Error Messages -->
+    <div th:if="${reviewMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${reviewMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row">
+        <!-- Store Image and Map Placeholder -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center bg-light" style="height: 300px;">
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <div>
+                            <span class="display-1">🏪</span>
+                            <p class="text-muted mt-2">Store Location</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store Statistics -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">📊 Store Ratings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Overall Rating:</small><br>
+                            <span class="h5" th:text="${#numbers.formatDecimal(averageRating, 1, 1)}">0.0</span>/5.0
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Reviews:</small><br>
+                            <span class="h5" th:text="${reviewCount}">0</span>
+                        </div>
+                    </div>
+                    <!-- Fixed: Detailed ratings condition -->
+                    <div class="row mt-2" th:if="${serviceRating != null and serviceRating > 0} or ${cleanlinessRating != null and cleanlinessRating > 0} or ${locationRating != null and locationRating > 0}">
+                        <div class="col-4" th:if="${serviceRating != null and serviceRating > 0}">
+                            <small class="text-muted">Service:</small><br>
+                            <span th:text="${#numbers.formatDecimal(serviceRating, 1, 1)}">0.0</span>/5
+                        </div>
+                        <div class="col-4" th:if="${cleanlinessRating != null and cleanlinessRating > 0}">
+                            <small class="text-muted">Cleanliness:</small><br>
+                            <span th:text="${#numbers.formatDecimal(cleanlinessRating, 1, 1)}">0.0</span>/5
+                        </div>
+                        <div class="col-4" th:if="${locationRating != null and locationRating > 0}">
+                            <small class="text-muted">Location:</small><br>
+                            <span th:text="${#numbers.formatDecimal(locationRating, 1, 1)}">0.0</span>/5
+                        </div>
+                    </div>
+                    <!-- Fixed: Recommendation count condition -->
+                    <div class="mt-2" th:if="${recommendationCount != null and recommendationCount > 0}">
+                        <small class="text-success">
+                            <strong th:text="${recommendationCount}">0</strong> customers recommend this store
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Details -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title" th:text="${store.name}">Store Name</h1>
+                    <!-- Fixed: Store manager condition -->
+                    <p class="text-muted mb-3" th:if="${store.storeManager != null and !#strings.isEmpty(store.storeManager)}">
+                        <strong>Store Manager:</strong> <span th:text="${store.storeManager}">Manager</span>
+                    </p>
+
+                    <!-- Store Status -->
+                    <div class="mb-3">
+                        <span class="badge fs-6"
+                              th:class="${store.isActive ? 'bg-success' : 'bg-danger'}"
+                              th:text="${store.statusDisplay}">Status</span>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="mb-3">
+                        <h5>📍 Location</h5>
+                        <p class="mb-1" th:text="${store.address}">Address</p>
+                        <p th:text="${store.city + ', ' + store.state + ' ' + store.zipCode}">City, State ZIP</p>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="mb-3">
+                        <h5>📞 Contact Information</h5>
+                        <!-- Fixed: Phone condition -->
+                        <p th:if="${store.phone != null and !#strings.isEmpty(store.phone)}" class="mb-1">
+                            <strong>Phone:</strong> <span th:text="${store.phone}">Phone</span>
+                        </p>
+                        <!-- Fixed: Email condition -->
+                        <p th:if="${store.email != null and !#strings.isEmpty(store.email)}" class="mb-0">
+                            <strong>Email:</strong> <span th:text="${store.email}">Email</span>
+                        </p>
+                    </div>
+
+                    <!-- Hours - FIXED: This was the main problem -->
+                    <div class="mb-3" th:if="${(store.workingHours != null and !#strings.isEmpty(store.workingHours)) or (store.workingDays != null and !#strings.isEmpty(store.workingDays))}">
+                        <h5>🕐 Store Hours</h5>
+                        <p th:if="${store.workingDays != null and !#strings.isEmpty(store.workingDays)}" class="mb-1">
+                            <strong>Days:</strong> <span th:text="${store.workingDays}">Working Days</span>
+                        </p>
+                        <p th:if="${store.workingHours != null and !#strings.isEmpty(store.workingHours)}" class="mb-0">
+                            <strong>Hours:</strong> <span th:text="${store.workingHours}">Working Hours</span>
+                        </p>
+                    </div>
+
+                    <!-- Store Features -->
+                    <div class="mb-3">
+                        <h5>✨ Store Features</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span th:if="${store.parkingAvailable}" class="badge bg-success">🅿️ Parking Available</span>
+                            <span th:if="${store.driveThrough}" class="badge bg-info">🚗 Drive-Through</span>
+                            <!-- Fixed: Store size condition -->
+                            <span th:if="${store.storeSizeSqft != null}" class="badge bg-secondary">
+                                📏 <span th:text="${store.storeSizeSqft}">0</span> sq ft
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Description - Fixed condition -->
+                    <div class="mb-4" th:if="${store.description != null and !#strings.isEmpty(store.description)}">
+                        <h5>ℹ️ About This Store</h5>
+                        <p th:text="${store.description}">Store description goes here...</p>
+                    </div>
+
+                    <!-- Opening Date - Fixed condition -->
+                    <div class="mb-3" th:if="${store.openingDate != null}">
+                        <p class="text-muted">
+                            <small>📅 Opened: <span th:text="${store.formattedOpeningDate}">Date</span></small>
+                        </p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" onclick="alert('Directions feature coming soon!')">
+                            🗺️ Get Directions
+                        </button>
+                        <button class="btn btn-outline-success" onclick="alert('Call feature coming soon!')">
+                            📞 Call Store
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Reviews Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">💬 Customer Reviews</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Write Review Form (for logged-in customers) -->
+                    <div th:if="${currentUser != null and currentUser.role.name() == 'CUSTOMER'}" class="mb-4">
+                        <h5>Write a Review</h5>
+                        <form th:action="@{/stores/{id}/review(id=${store.id})}" method="post" th:object="${newComment}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">Review Title</label>
+                                        <input type="text" class="form-control" id="title" th:field="*{title}"
+                                               placeholder="Summary of your visit">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rating" class="form-label">Overall Rating</label>
+                                        <select class="form-select" id="rating" th:field="*{rating}" required>
+                                            <option value="">Select overall rating</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ (5 stars)</option>
+                                            <option value="4">⭐⭐⭐⭐☆ (4 stars)</option>
+                                            <option value="3">⭐⭐⭐☆☆ (3 stars)</option>
+                                            <option value="2">⭐⭐☆☆☆ (2 stars)</option>
+                                            <option value="1">⭐☆☆☆☆ (1 star)</option>
+                                        </select>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Ratings -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="serviceRating" class="form-label">Service Quality</label>
+                                        <select class="form-select" id="serviceRating" name="serviceRating">
+                                            <option value="">Rate service</option>
+                                            <option value="5">⭐⭐⭐⭐⭐</option>
+                                            <option value="4">⭐⭐⭐⭐☆</option>
+                                            <option value="3">⭐⭐⭐☆☆</option>
+                                            <option value="2">⭐⭐☆☆☆</option>
+                                            <option value="1">⭐☆☆☆☆</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="cleanlinessRating" class="form-label">Cleanliness</label>
+                                        <select class="form-select" id="cleanlinessRating" name="cleanlinessRating">
+                                            <option value="">Rate cleanliness</option>
+                                            <option value="5">⭐⭐⭐⭐⭐</option>
+                                            <option value="4">⭐⭐⭐⭐☆</option>
+                                            <option value="3">⭐⭐⭐☆☆</option>
+                                            <option value="2">⭐⭐☆☆☆</option>
+                                            <option value="1">⭐☆☆☆☆</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="locationRating" class="form-label">Location/Convenience</label>
+                                        <select class="form-select" id="locationRating" name="locationRating">
+                                            <option value="">Rate location</option>
+                                            <option value="5">⭐⭐⭐⭐⭐</option>
+                                            <option value="4">⭐⭐⭐⭐☆</option>
+                                            <option value="3">⭐⭐⭐☆☆</option>
+                                            <option value="2">⭐⭐☆☆☆</option>
+                                            <option value="1">⭐☆☆☆☆</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Review Content</label>
+                                <textarea class="form-control" id="content" th:field="*{content}" rows="4"
+                                          placeholder="Share your experience at this store..." required></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="wouldRecommend" name="wouldRecommend" value="true" checked>
+                                    <label class="form-check-label" for="wouldRecommend">
+                                        I would recommend this store to others
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </form>
+                    </div>
+
+                    <!-- Login message for non-logged users -->
+                    <div th:if="${currentUser == null}" class="alert alert-info">
+                        <a href="/login">Login</a> to write a review for this store.
+                    </div>
+
+                    <!-- Reviews List -->
+                    <div th:if="${!#lists.isEmpty(comments)}">
+                        <h5 class="mt-4">Customer Reviews (<span th:text="${reviewCount}">0</span>)</h5>
+                        <div th:each="comment : ${comments}" class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1" th:text="${comment.title}">Review Title</h6>
+                                    <div class="mb-1">
+                                        <span class="text-warning" th:text="${comment.starRating}">⭐⭐⭐⭐⭐</span>
+                                        <small class="text-muted ms-2">
+                                            by <strong th:text="${comment.user.username}">Username</strong>
+                                            on <span th:text="${comment.formattedTimestamp}">Date</span>
+                                        </small>
+                                    </div>
+                                    <!-- Detailed ratings if available - FIXED -->
+                                    <div th:if="${comment.serviceRating != null or comment.cleanlinessRating != null or comment.locationRating != null}" class="mb-1">
+                                        <small class="text-muted">
+                                            <span th:if="${comment.serviceRating != null}">Service: <span th:text="${comment.serviceRating}">5</span>/5 </span>
+                                            <span th:if="${comment.cleanlinessRating != null}">| Cleanliness: <span th:text="${comment.cleanlinessRating}">5</span>/5 </span>
+                                            <span th:if="${comment.locationRating != null}">| Location: <span th:text="${comment.locationRating}">5</span>/5</span>
+                                        </small>
+                                    </div>
+                                    <!-- Fixed: Would recommend condition -->
+                                    <div th:if="${comment.wouldRecommend != null and comment.wouldRecommend}" class="mb-1">
+                                        <span class="badge bg-success">👍 Recommends this store</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mb-0" th:text="${comment.content}">Review content goes here...</p>
+                        </div>
+                    </div>
+
+                    <!-- No Reviews Message -->
+                    <div th:if="${#lists.isEmpty(comments)}" class="text-center text-muted py-4">
+                        <p>No reviews yet. Be the first to review this store!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nearby Stores -->
+    <div class="row mt-4" th:if="${nearbyStores != null and !#lists.isEmpty(nearbyStores)}">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🏪 Other Stores in <span th:text="${store.city}">City</span></h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div th:each="nearbyStore : ${nearbyStores}" class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title" th:text="${nearbyStore.name}">Store Name</h6>
+                                    <p class="card-text small" th:text="${nearbyStore.address}">Address</p>
+                                    <a th:href="@{/stores/{id}(id=${nearbyStore.id})}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Stores -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="/stores" class="btn btn-outline-primary me-2">← Back to All Stores</a>
+            <a th:href="@{/stores/city/{city}(city=${store.city})}" class="btn btn-outline-secondary">
+                More Stores in <span th:text="${store.city}">City</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

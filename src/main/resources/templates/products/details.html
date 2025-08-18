@@ -179,7 +179,7 @@
                     </div>
 
                     <!-- Reviews List -->
-                    <div th:if="${!comments.empty}">
+                    <div th:if="${!#lists.isEmpty(comments)}">
                         <h5 class="mt-4">Customer Reviews (<span th:text="${reviewCount}">0</span>)</h5>
                         <div th:each="comment : ${comments}" class="border-bottom pb-3 mb-3">
                             <div class="d-flex justify-content-between align-items-start">
@@ -199,7 +199,7 @@
                     </div>
 
                     <!-- No Reviews Message -->
-                    <div th:if="${comments.empty}" class="text-center text-muted py-4">
+                    <div th:if="${#lists.isEmpty(comments)}" class="text-center text-muted py-4">
                         <p>No reviews yet. Be the first to review this product!</p>
                     </div>
                 </div>

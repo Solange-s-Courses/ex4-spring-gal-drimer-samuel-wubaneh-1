@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Results - Chain Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .results-card {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+        }
+        .celebration {
+            animation: celebrate 2s ease-in-out infinite alternate;
+        }
+        @keyframes celebrate {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">🏪 Chain Store</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/game">Game</a>
+            <a class="nav-link" href="/profile">Profile</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Results Header -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4" th:class="${isNewHighScore ? 'text-warning celebration' : ''}">
+                <span th:if="${isNewHighScore}">🏆 New High Score!</span>
+                <span th:unless="${isNewHighScore}">🎯 Game Complete!</span>
+            </h1>
+            <p class="lead text-muted">Here are your final results</p>
+        </div>
+    </div>
+
+    <!-- Main Results Card -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12">
+            <div class="card results-card">
+                <div class="card-body text-center py-5">
+                    <div class="row">
+                        <!-- Final Score -->
+                        <div class="col-md-4 mb-4">
+                            <div class="score-circle bg-primary">
+                                <span th:text="${session.currentScore}">0</span>
+                            </div>
+                            <h5 class="mt-3">Final Score</h5>
+                            <p class="text-muted">Total points earned</p>
+                        </div>
+
+                        <!-- Accuracy -->
+                        <div class="col-md-4 mb-4">
+                            <div class="score-circle bg-success">
+                                <span th:text="${#numbers.formatDecimal(session.accuracyPercentage, 1, 0)} + '%'">100%</span>
+                            </div>
+                            <h5 class="mt-3">Accuracy</h5>
+                            <p class="text-muted">
+                                <span th:text="${session.correctAnswers}">0</span> out of
+                                <span th:text="${session.questionsAnswered}">0</span> correct
+                            </p>
+                        </div>
+
+                        <!-- Customer Points Earned -->
+                        <div class="col-md-4 mb-4">
+                            <div class="score-circle bg-warning">
+                                <span th:text="${session.customerPointsAwarded}">0</span>
+                            </div>
+                            <h5 class="mt-3">Loyalty Points</h5>
+                            <p class="text-muted">Added to your account</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Breakdown -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Performance Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="h4 text-primary" th:text="${session.totalQuestions}">10</div>
+                            <small class="text-muted">Total Questions</small>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="h4 text-success" th:text="${session.correctAnswers}">8</div>
+                            <small class="text-muted">Correct</small>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="h4 text-danger" th:text="${session.questionsAnswered - session.correctAnswers}">2</div>
+                            <small class="text-muted">Incorrect</small>
+                        </div>
+                        <div class="col-6 col-md-3 mb-3">
+                            <div class="h4 text-info" th:text="${session.durationMinutes} + ' min'">5 min</div>
+                            <small class="text-muted">Duration</small>
+                        </div>
+                    </div>
+
+                    <!-- Performance Grade -->
+                    <div class="text-center mt-3">
+                        <div th:if="${session.accuracyPercentage >= 90}" class="alert alert-success">
+                            <h5>🌟 Excellent Performance!</h5>
+                            <p class="mb-0">You're a Chain Store expert! Outstanding knowledge of our products and stores.</p>
+                        </div>
+                        <div th:if="${session.accuracyPercentage >= 70 and session.accuracyPercentage < 90}" class="alert alert-info">
+                            <h5>👍 Good Job!</h5>
+                            <p class="mb-0">Solid performance! You know our chain store well.</p>
+                        </div>
+                        <div th:if="${session.accuracyPercentage >= 50 and session.accuracyPercentage < 70}" class="alert alert-warning">
+                            <h5>📚 Keep Learning!</h5>
+                            <p class="mb-0">Not bad! Spend more time browsing our stores and products to improve.</p>
+                        </div>
+                        <div th:if="${session.accuracyPercentage < 50}" class="alert alert-light">
+                            <h5>🎯 Practice Makes Perfect!</h5>
+                            <p class="mb-0">Don't give up! Visit our stores and explore our products to learn more.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Stats -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 How You Compare</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Your Average</h6>
+                            <div class="h4 text-info" th:text="${userAverageScore != null ? #numbers.formatDecimal(userAverageScore, 1, 1) : 'N/A'}">0.0</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Global Average</h6>
+                            <div class="h4 text-secondary" th:text="${globalAverageScore != null ? #numbers.formatDecimal(globalAverageScore, 1, 1) : 'N/A'}">0.0</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-muted">Your Best</h6>
+                            <div class="h4 text-warning" th:text="${session.user.highestGameScore}">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Achievement Badges -->
+                    <div class="text-center mt-3">
+                        <div th:if="${isNewHighScore}" class="mb-2">
+                            <span class="badge bg-warning fs-6 celebration">🏆 New Personal Best!</span>
+                        </div>
+                        <div th:if="${session.accuracyPercentage == 100}" class="mb-2">
+                            <span class="badge bg-success fs-6">🎯 Perfect Score!</span>
+                        </div>
+                        <div th:if="${session.currentScore >= globalAverageScore}" class="mb-2">
+                            <span class="badge bg-primary fs-6">📊 Above Average!</span>
+                        </div>
+                        <div th:if="${session.durationMinutes <= 3}" class="mb-2">
+                            <span class="badge bg-info fs-6">⚡ Speed Demon!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rewards Summary -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎁 Rewards Earned</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Customer Loyalty Points:</h6>
+                            <ul class="list-unstyled">
+                                <li>✅ Game completion bonus: <strong>20 points</strong></li>
+                                <li>✅ Accuracy bonus: <strong th:text="${session.customerPointsAwarded - 20}">0</strong> points</li>
+                                <li class="border-top pt-2 mt-2">
+                                    <strong>Total earned: <span th:text="${session.customerPointsAwarded}">20</span> points</strong>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Account Updates:</h6>
+                            <ul class="list-unstyled">
+                                <li th:if="${isNewHighScore}">🏆 New high score recorded</li>
+                                <li>📈 Game statistics updated</li>
+                                <li>⭐ Loyalty points added to account</li>
+                                <li>📊 Profile progress updated</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row justify-content-center">
+        <div class="col-12 text-center">
+            <div class="btn-group mb-3" role="group">
+                <a href="/game" class="btn btn-success btn-lg">🎮 Play Again</a>
+                <a href="/game/leaderboard" class="btn btn-warning btn-lg">🏆 Leaderboard</a>
+                <a href="/game/history" class="btn btn-info btn-lg">📊 My History</a>
+            </div>
+            <br>
+            <div class="btn-group" role="group">
+                <a href="/products" class="btn btn-outline-primary">📦 Browse Products</a>
+                <a href="/stores" class="btn btn-outline-primary">🏪 Visit Stores</a>
+                <a href="/profile" class="btn btn-outline-primary">👤 My Profile</a>
+                <a href="/" class="btn btn-outline-secondary">🏠 Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Results (Optional) -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6 text-center">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">📱 Share Your Achievement</h6>
+                    <p class="card-text small text-muted">
+                        I just scored <strong th:text="${session.currentScore}">0</strong> points in the Chain Store Loyalty Game!
+                        Can you beat my score?
+                    </p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="shareResults()">Share Score</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Celebration animation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add some celebratory effects for high scores
+        const isNewHighScore = [[${isNewHighScore}]];
+        const accuracy = [[${session.accuracyPercentage}]];
+
+        if (isNewHighScore || accuracy >= 90) {
+            // Add confetti or celebration effect here
+            console.log('🎉 Celebration time!');
+        }
+    });
+
+    // Share functionality
+    function shareResults() {
+        const score = [[${session.currentScore}]];
+        const accuracy = [[${session.accuracyPercentage}]];
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Chain Store Loyalty Game Results',
+                text: `I just scored ${score} points with ${accuracy.toFixed(1)}% accuracy in the Chain Store Loyalty Game!`,
+                url: window.location.href
+            });
+        } else {
+            // Fallback for browsers that don't support Web Share API
+            const text = `I just scored ${score} points with ${accuracy.toFixed(1)}% accuracy in the Chain Store Loyalty Game! Can you beat my score?`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Results copied to clipboard!');
+            });
+        }
+    }
+
+    // Auto-redirect to game home after 30 seconds (optional)
+    // Uncomment to enable auto-redirect
+    /*
+    setTimeout(function() {
+        if (confirm('Would you like to play another game?')) {
+            window.location.href = '/game';
+        }
+    }, 30000);
+    */
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

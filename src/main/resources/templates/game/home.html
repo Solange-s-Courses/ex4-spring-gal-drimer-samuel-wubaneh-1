@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty Game - Chain Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">🏪 Chain Store</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/products">Products</a>
+            <a class="nav-link" href="/stores">Stores</a>
+            <a class="nav-link active" href="/game">Game</a>
+            <a class="nav-link" href="/profile">Profile</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4">🎮 Chain Store Loyalty Game</h1>
+            <p class="lead">Test your knowledge about our stores and products to earn loyalty points!</p>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- User Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">🏆 Your High Score</h5>
+                    <h2 class="text-primary" th:text="${userHighestScore ?: '0'}">0</h2>
+                    <small class="text-muted">Best performance</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">📊 Average Score</h5>
+                    <h2 class="text-info" th:text="${userAverageScore != null ? #numbers.formatDecimal(userAverageScore, 1, 1) : '0.0'}">0.0</h2>
+                    <small class="text-muted">Your average</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">🎯 Games Played</h5>
+                    <h2 class="text-success" th:text="${userGamesPlayed}">0</h2>
+                    <small class="text-muted">Total completed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">🌟 Global High Score</h5>
+                    <h2 class="text-warning" th:text="${globalHighestScore ?: '0'}">0</h2>
+                    <small class="text-muted">Best of all players</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Session Alert -->
+    <div th:if="${hasActiveSession}" class="alert alert-warning" role="alert">
+        <h5 class="alert-heading">🎮 You have an active game session!</h5>
+        <p>You have a game in progress. You can continue playing or start a new game (which will end your current session).</p>
+        <div class="mt-3">
+            <a href="/game/continue" class="btn btn-warning me-2">Continue Current Game</a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#newGameForm">
+                Start New Game
+            </button>
+        </div>
+        <div class="collapse mt-3" id="newGameForm">
+            <div class="card card-body bg-light">
+                <p class="text-danger"><strong>Warning:</strong> Starting a new game will end your current session and save your progress.</p>
+                <form action="/game/start" method="post" class="d-inline">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <label for="totalQuestions" class="form-label">Number of Questions:</label>
+                            <select class="form-select" id="totalQuestions" name="totalQuestions">
+                                <option value="5">5 Questions (Quick Game)</option>
+                                <option value="10" selected>10 Questions (Standard)</option>
+                                <option value="15">15 Questions (Extended)</option>
+                                <option value="20">20 Questions (Challenge)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-danger">Start New Game</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start New Game (when no active session) -->
+    <div th:unless="${hasActiveSession}" class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">🚀 Start New Game</h4>
+                </div>
+                <div class="card-body">
+                    <div th:if="${!canStartNewGame}" class="alert alert-warning">
+                        <p class="mb-0">Cannot start a new game right now. Make sure there are enough questions available and you don't have an active session.</p>
+                    </div>
+
+                    <div th:if="${canStartNewGame}">
+                        <p class="text-center mb-4">Ready to test your knowledge? Choose your game length and let's begin!</p>
+
+                        <form action="/game/start" method="post">
+                            <div class="row justify-content-center">
+                                <div class="col-md-6">
+                                    <label for="gameQuestions" class="form-label">Select Game Length:</label>
+                                    <select class="form-select mb-3" id="gameQuestions" name="totalQuestions">
+                                        <option value="5">🚀 Quick Game (5 questions)</option>
+                                        <option value="10" selected>⚡ Standard Game (10 questions)</option>
+                                        <option value="15">🔥 Extended Game (15 questions)</option>
+                                        <option value="20">💪 Challenge Game (20 questions)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    🎮 Start Playing!
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                Available Questions: <strong th:text="${totalQuestions}">0</strong>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to Play -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📖 How to Play</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>🎯 Game Rules:</h6>
+                            <ul>
+                                <li>Answer multiple-choice questions about our stores and products</li>
+                                <li>Each correct answer earns you points (usually 10 points)</li>
+                                <li>Harder questions may be worth more points</li>
+                                <li>Complete the game to earn customer loyalty points</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>🎁 Rewards:</h6>
+                            <ul>
+                                <li><strong>Completion Bonus:</strong> 20 customer points for finishing</li>
+                                <li><strong>Accuracy Bonus:</strong> Extra points based on your score</li>
+                                <li><strong>High Score:</strong> Updates your personal best</li>
+                                <li><strong>Leaderboard:</strong> Compete with other customers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Games History -->
+    <div class="row mb-4" th:if="${!#lists.isEmpty(recentGames)}">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📅 Your Recent Games</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Score</th>
+                                <th>Accuracy</th>
+                                <th>Points Earned</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="game : ${recentGames}">
+                                <td th:text="${#temporals.format(game.sessionStart, 'MMM dd, yyyy')}">Date</td>
+                                <td><span class="badge bg-primary" th:text="${game.currentScore}">0</span></td>
+                                <td th:text="${#numbers.formatDecimal(game.accuracyPercentage, 1, 1)} + '%'">0%</td>
+                                <td><span class="badge bg-success" th:text="${game.customerPointsAwarded}">0</span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-2">
+                        <a href="/game/history" class="btn btn-outline-primary btn-sm">View Full History</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Scores Leaderboard -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🏆 Top Scores</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(topScores)}" class="text-center text-muted">
+                        <p>No games played yet!</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(topScores)}">
+                        <ol class="list-group list-group-numbered">
+                            <li th:each="score, iterStat : ${topScores}"
+                                th:if="${iterStat.index < 5}"
+                                class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold" th:text="${score.user.username}">Username</div>
+                                    <small th:text="${#temporals.format(score.sessionEnd, 'MMM dd')}">Date</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill" th:text="${score.currentScore}">0</span>
+                            </li>
+                        </ol>
+                        <div class="text-center mt-2">
+                            <a href="/game/leaderboard" class="btn btn-outline-warning btn-sm">Full Leaderboard</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="/game/leaderboard" class="btn btn-outline-warning me-2">🏆 Leaderboard</a>
+            <a href="/game/history" class="btn btn-outline-info me-2">📊 My History</a>
+            <a href="/" class="btn btn-outline-secondary">🏠 Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

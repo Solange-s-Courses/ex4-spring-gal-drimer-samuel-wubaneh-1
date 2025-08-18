@@ -36,7 +36,7 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">🏪 Store Network</h5>
-                            <p class="card-text">Browse our chain stores, locations, and services.</p>
+                            <p class="card-text">Browse our chain stores, locations, and services. Find stores near you and read customer reviews.</p>
                             <a href="/stores" class="btn btn-primary">View Stores</a>
                         </div>
                     </div>
@@ -95,7 +95,7 @@
                 <!-- Navigation buttons based on authentication status -->
                 <div th:if="${!isAuthenticated}">
                     <!-- Not logged in - show login and register buttons -->
-                    <a href="/login" class="btn btn-primary me-2">🔑 Login</a>
+                    <a href="/login" class="btn btn-primary me-2">🔐 Login</a>
                     <a href="/register" class="btn btn-success me-2">📝 Register</a>
                     <a href="/test" class="btn btn-outline-info">🧪 Test Page</a>
                 </div>

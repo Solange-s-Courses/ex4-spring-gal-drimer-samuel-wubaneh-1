@@ -48,15 +48,30 @@ public class ProductController {
         Sort.Direction sortDirection = direction.equals("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
+        // Debug logging
+        System.out.println("Filter parameters:");
+        System.out.println("- search: " + search);
+        System.out.println("- category: " + category);
+        System.out.println("- brand: " + brand);
+        System.out.println("- minPrice: " + minPrice);
+        System.out.println("- maxPrice: " + maxPrice);
+        System.out.println("- inStock: " + inStock);
+
         // Get products with filters
         Page<Product> products;
         if (search != null && !search.trim().isEmpty()) {
             // If searching, use search functionality
             List<Product> searchResults = productService.searchProducts(search);
-            products = new org.springframework.data.domain.PageImpl<>(searchResults, pageable, searchResults.size());
+            // Convert List to Page for consistency
+            int start = (int) pageable.getOffset();
+            int end = Math.min((start + pageable.getPageSize()), searchResults.size());
+            List<Product> pageContent = searchResults.subList(start, end);
+            products = new org.springframework.data.domain.PageImpl<>(pageContent, pageable, searchResults.size());
+            System.out.println("Using search, found: " + searchResults.size() + " products");
         } else {
             // Use advanced filtering
             products = productService.getProductsWithFilters(null, category, brand, minPrice, maxPrice, inStock, pageable);
+            System.out.println("Using filters, found: " + products.getTotalElements() + " products");
         }
 
         // Get filter options
