@@ -136,6 +136,78 @@ public class GameService {
         return session;
     }
 
+    // Logout Game Handling - NEW METHODS
+
+    /**
+     * End active game session on user logout with zero points
+     */
+    public void endActiveGameOnLogout(User user) {
+        try {
+            Optional<GameSession> activeSession = gameSessionRepository.findByUserAndIsCompleted(user, false);
+
+            if (activeSession.isPresent()) {
+                GameSession session = activeSession.get();
+
+                // Set game as completed with current progress but zero points
+                session.setIsCompleted(true);
+                session.setSessionEnd(LocalDateTime.now());
+                session.setCustomerPointsAwarded(0); // Zero points for incomplete game
+
+                // Save the session
+                gameSessionRepository.save(session);
+
+                System.out.println("Ended active game session for user: " + user.getUsername() +
+                        " (Session ID: " + session.getId() + ") - Zero points awarded due to logout");
+            }
+        } catch (Exception e) {
+            // Log error but don't throw - we don't want to prevent logout
+            System.err.println("Error ending active game session on logout for user " + user.getUsername() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Alternative method: End active game session and award partial points based on current progress
+     */
+    public void endActiveGameOnLogoutWithPartialPoints(User user) {
+        try {
+            Optional<GameSession> activeSession = gameSessionRepository.findByUserAndIsCompleted(user, false);
+
+            if (activeSession.isPresent()) {
+                GameSession session = activeSession.get();
+
+                // Calculate partial points (e.g., 50% of current score)
+                int partialPoints = Math.max(1, session.getCurrentScore() / 2);
+
+                // Complete the game with partial rewards
+                session.setIsCompleted(true);
+                session.setSessionEnd(LocalDateTime.now());
+                session.setCustomerPointsAwarded(partialPoints);
+
+                // Update user points and high score if applicable
+                user.addCustomerPoints(partialPoints);
+                if (session.getCurrentScore() > user.getHighestGameScore()) {
+                    user.updateHighestScore(session.getCurrentScore());
+                }
+
+                // Save both session and user
+                gameSessionRepository.save(session);
+                userService.updateUser(user);
+
+                System.out.println("Ended active game session for user: " + user.getUsername() +
+                        " with partial points: " + partialPoints);
+            }
+        } catch (Exception e) {
+            System.err.println("Error ending active game session with partial points for user " + user.getUsername() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Check if user has active game session (useful for UI display)
+     */
+    public boolean hasActiveGameSession(User user) {
+        return gameSessionRepository.findByUserAndIsCompleted(user, false).isPresent();
+    }
+
     // Question CRUD (for admin)
     public GameQuestion saveQuestion(GameQuestion question) {
         return gameQuestionRepository.save(question);
@@ -240,5 +312,62 @@ public class GameService {
 
     public boolean canStartNewGame(User user) {
         return !hasActiveSession(user) && getActiveQuestionsCount() >= 5; // Need at least 5 questions
+    }
+
+    // Utility Methods
+
+    /**
+     * Get all incomplete game sessions (for admin monitoring)
+     */
+    public List<GameSession> getAllIncompleteGames() {
+        return gameSessionRepository.findByUserAndIsCompletedOrderBySessionStartDesc(null, false);
+    }
+
+    /**
+     * Clean up old incomplete games (can be run as scheduled task)
+     */
+    public void cleanupOldIncompleteGames(int daysOld) {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysOld);
+        List<GameSession> oldSessions = gameSessionRepository.findBySessionStartAfterOrderBySessionStartDesc(cutoffDate);
+
+        for (GameSession session : oldSessions) {
+            if (!session.getIsCompleted()) {
+                // End old incomplete games with zero points
+                session.setIsCompleted(true);
+                session.setSessionEnd(LocalDateTime.now());
+                session.setCustomerPointsAwarded(0);
+                gameSessionRepository.save(session);
+            }
+        }
+    }
+
+    /**
+     * Force end a specific game session (admin function)
+     */
+    public void forceEndGameSession(Long sessionId, boolean awardPoints) {
+        try {
+            GameSession session = getSessionById(sessionId);
+
+            if (!session.getIsCompleted()) {
+                session.setIsCompleted(true);
+                session.setSessionEnd(LocalDateTime.now());
+
+                if (awardPoints) {
+                    // Award points based on current progress
+                    session.completeGame();
+                    User user = session.getUser();
+                    user.updateHighestScore(session.getCurrentScore());
+                    user.addCustomerPoints(session.getCustomerPointsAwarded());
+                    userService.updateUser(user);
+                } else {
+                    // No points awarded
+                    session.setCustomerPointsAwarded(0);
+                }
+
+                gameSessionRepository.save(session);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to force end game session: " + e.getMessage());
+        }
     }
 }

@@ -5,80 +5,367 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playing Game - Chain Store</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-4">
-    <h1>🎮 Game Debug Page</h1>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">🏪 Chain Store</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/game">Game Home</a>
+            <a class="nav-link" href="/">Home</a>
+        </div>
+    </div>
+</nav>
 
-    <!-- Debug Information -->
+<div class="container mt-4">
+    <!-- DEBUG SECTION - Add this temporarily to see what's happening -->
     <div class="alert alert-info">
-        <h5>Debug Info:</h5>
-        <p><strong>Session ID:</strong> <span th:text="${session?.id}">null</span></p>
-        <p><strong>Questions Answered:</strong> <span th:text="${session?.questionsAnswered}">null</span></p>
-        <p><strong>Total Questions:</strong> <span th:text="${session?.totalQuestions}">null</span></p>
-        <p><strong>Current Score:</strong> <span th:text="${session?.currentScore}">null</span></p>
-        <p><strong>Question ID:</strong> <span th:text="${question?.id}">null</span></p>
-        <p><strong>Question Text:</strong> <span th:text="${question?.questionText}">null</span></p>
+        <h6>🔍 Debug Information:</h6>
+        <p><strong>GameSession Object:</strong> <span th:text="${gameSession}">null</span></p>
+        <p><strong>Session ID:</strong> <span th:text="${gameSession?.id}">null</span></p>
+        <p><strong>Session User:</strong> <span th:text="${gameSession?.user?.username}">null</span></p>
+        <p><strong>Questions Answered:</strong> <span th:text="${gameSession?.questionsAnswered}">null</span></p>
+        <p><strong>Total Questions:</strong> <span th:text="${gameSession?.totalQuestions}">null</span></p>
+        <p><strong>Question Object:</strong> <span th:text="${question}">null</span></p>
         <p><strong>Question Number:</strong> <span th:text="${questionNumber}">null</span></p>
+        <p><strong>Current URL:</strong> /game/play/<span th:text="${gameSession?.id ?: 'unknown'}">unknown</span></p>
     </div>
 
-    <!-- Simple Question Display -->
-    <div class="card" th:if="${question != null}">
-        <div class="card-header">
-            <h4>Question <span th:text="${questionNumber ?: '?'}">?</span> of <span th:text="${session?.totalQuestions ?: '?'}">?</span></h4>
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress" style="height: 30px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     role="progressbar"
+                     th:style="'width: ' + ${((gameSession.questionsAnswered ?: 0) * 100) / (gameSession.totalQuestions ?: 1)} + '%'"
+                     th:text="${(gameSession.questionsAnswered ?: 0)} + ' / ' + ${(gameSession.totalQuestions ?: 10)}">
+                    0 / 10
+                </div>
+            </div>
+            <div class="text-center mt-2">
+                <div class="row">
+                    <div class="col-md-4">
+                        <small class="text-muted">Current Score: <strong th:text="${gameSession.currentScore ?: 0}">0</strong> points</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Correct: <strong th:text="${gameSession.correctAnswers ?: 0}">0</strong></small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Accuracy: <strong th:text="${gameSession.accuracyPercentage != null ? #numbers.formatDecimal(gameSession.accuracyPercentage, 1, 1) : '0.0'}">0.0</strong>%</small>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <h5 th:text="${question.questionText}">Question text</h5>
+    </div>
 
-            <form action="/game/play/answer" method="post">
-                <!-- Debug: Show the actual values being passed -->
-                <div class="alert alert-warning">
-                    <strong>Debug Form Values:</strong><br>
-                    Session ID: <span th:text="${session.id}">null</span><br>
-                    Question ID: <span th:text="${question.id}">null</span>
+    <!-- Question Card -->
+    <div class="row justify-content-center" th:if="${question != null}">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                Question <span th:text="${questionNumber ?: 1}">1</span> of <span th:text="${gameSession.totalQuestions ?: 10}">10</span>
+                            </h4>
+                            <small th:text="${question.questionType != null ? question.questionType.displayName : 'Question'}">Question Type</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning fs-6" th:text="${(question.points ?: 10)} + ' pts'">10 pts</span>
+                        </div>
+                    </div>
                 </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-4" th:text="${question.questionText}">Question text</h5>
 
-                <input type="hidden" name="sessionId" th:value="${session.id}">
-                <input type="hidden" name="questionId" th:value="${question.id}">
+                    <form th:action="@{/game/play/answer}" method="post" class="mt-4">
+                        <input type="hidden" name="sessionId" th:value="${gameSession.id}">
+                        <input type="hidden" name="questionId" th:value="${question.id}">
 
-                <div class="mb-2">
-                    <input type="radio" name="answer" value="A" id="answerA" required>
-                    <label for="answerA"><strong>A)</strong> <span th:text="${question.optionA}">Option A</span></label>
+                        <div class="mb-3">
+                            <div class="form-check p-3 border rounded option-card">
+                                <input class="form-check-input" type="radio" name="answer" value="A" id="answerA" required>
+                                <label class="form-check-label w-100" for="answerA">
+                                    <strong>A)</strong> <span th:text="${question.optionA}">Option A</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check p-3 border rounded option-card">
+                                <input class="form-check-input" type="radio" name="answer" value="B" id="answerB" required>
+                                <label class="form-check-label w-100" for="answerB">
+                                    <strong>B)</strong> <span th:text="${question.optionB}">Option B</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check p-3 border rounded option-card">
+                                <input class="form-check-input" type="radio" name="answer" value="C" id="answerC" required>
+                                <label class="form-check-label w-100" for="answerC">
+                                    <strong>C)</strong> <span th:text="${question.optionC}">Option C</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check p-3 border rounded option-card">
+                                <input class="form-check-input" type="radio" name="answer" value="D" id="answerD" required>
+                                <label class="form-check-label w-100" for="answerD">
+                                    <strong>D)</strong> <span th:text="${question.optionD}">Option D</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                🎯 Submit Answer
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Question Info -->
+                    <div class="mt-4 text-center">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    Points for this question: <strong th:text="${question.points ?: 10}">10</strong>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    Difficulty: <strong th:text="${question.difficultyText ?: 'Easy'}">Easy</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explanation (if available) -->
+                    <div th:if="${question.explanation != null and !#strings.isEmpty(question.explanation)}" class="mt-3">
+                        <div class="alert alert-light">
+                            <small><strong>Hint:</strong> <span th:text="${question.explanation}">Question explanation</span></small>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="mb-2">
-                    <input type="radio" name="answer" value="B" id="answerB" required>
-                    <label for="answerB"><strong>B)</strong> <span th:text="${question.optionB}">Option B</span></label>
-                </div>
-
-                <div class="mb-2">
-                    <input type="radio" name="answer" value="C" id="answerC" required>
-                    <label for="answerC"><strong>C)</strong> <span th:text="${question.optionC}">Option C</span></label>
-                </div>
-
-                <div class="mb-2">
-                    <input type="radio" name="answer" value="D" id="answerD" required>
-                    <label for="answerD"><strong>D)</strong> <span th:text="${question.optionD}">Option D</span></label>
-                </div>
-
-                <button type="submit" class="btn btn-primary mt-3">Submit Answer</button>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- No Question Available -->
     <div class="alert alert-danger" th:if="${question == null}">
-        <h4>No Question Available</h4>
-        <p>There was an issue loading the question.</p>
+        <h4>❌ No Question Available</h4>
+        <p>There was an issue loading the question or the game has ended.</p>
         <a href="/game" class="btn btn-primary">Back to Game Home</a>
     </div>
 
-    <!-- Progress Info (Safe) -->
-    <div class="mt-3" th:if="${session != null}">
-        <p>Score: <span th:text="${session.currentScore ?: 0}">0</span></p>
-        <p>Answered: <span th:text="${session.questionsAnswered ?: 0}">0</span></p>
-        <p>Correct: <span th:text="${session.correctAnswers ?: 0}">0</span></p>
+    <!-- Game Actions -->
+    <div class="row mt-4" th:if="${question != null}">
+        <div class="col-12 text-center">
+            <!-- Multiple quit options for debugging -->
+
+            <!-- Option 1: Simple redirect to home -->
+            <a th:href="@{/game}"
+               class="btn btn-outline-secondary me-2"
+               onclick="return confirm('Are you sure you want to quit the game? You will return to game home.')">
+                🏠 Quit to Home
+            </a>
+
+            <!-- Option 2: POST with path variable (if gameSession.id exists) -->
+            <form th:if="${gameSession?.id != null}"
+                  th:action="@{'/game/end/' + ${gameSession.id}}"
+                  method="post"
+                  style="display: inline;"
+                  onsubmit="return confirm('Are you sure you want to quit the game? Your progress will be saved.')">
+                <button type="submit" class="btn btn-outline-danger me-2">
+                    🚪 Quit & See Results (Path)
+                </button>
+            </form>
+
+            <!-- Option 3: POST with request parameter -->
+            <form th:if="${gameSession?.id != null}"
+                  action="/game/end"
+                  method="post"
+                  style="display: inline;"
+                  onsubmit="return confirm('Are you sure you want to quit the game? Your progress will be saved.')">
+                <input type="hidden" name="sessionId" th:value="${gameSession.id}">
+                <button type="submit" class="btn btn-outline-warning me-2">
+                    🚪 Quit & See Results (Param)
+                </button>
+            </form>
+
+            <!-- Option 4: JavaScript-based (works even if session.id is null in Thymeleaf) -->
+            <button onclick="quitGameJS()" class="btn btn-outline-info me-2">
+                🚪 Quit & See Results (JS)
+            </button>
+
+            <!-- Fallback if no session ID -->
+            <div th:if="${gameSession?.id == null}" class="alert alert-warning mt-2">
+                <small>⚠️ Session ID is null - using fallback quit options only</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for quit functionality -->
+    <script th:inline="javascript">
+        function quitGameJS() {
+            if (!confirm('Are you sure you want to quit the game? Your progress will be saved.')) {
+                return;
+            }
+
+            // Extract session ID from current URL path
+            var currentPath = window.location.pathname;
+            var pathParts = currentPath.split('/');
+            var sessionId = pathParts[pathParts.length - 1];
+
+            console.log('Current path:', currentPath);
+            console.log('Extracted session ID:', sessionId);
+
+            // Validate that we have a numeric session ID
+            if (sessionId && !isNaN(sessionId)) {
+                // Try POST to end game
+                fetch('/game/end/' + sessionId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    }
+                })
+                    .then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else {
+                            window.location.href = '/game/results/' + sessionId;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error ending game:', error);
+                        // Fallback to game home
+                        window.location.href = '/game';
+                    });
+            } else {
+                // Fallback if we can't extract session ID
+                alert('Unable to extract session ID. Returning to game home.');
+                window.location.href = '/game';
+            }
+        }
+    </script>
+
+    <!-- Game Statistics Card -->
+    <div class="row mt-4" th:if="${question != null}">
+        <div class="col-md-8 offset-md-2">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="text-muted">Questions Left</small><br>
+                            <strong th:text="${(gameSession.totalQuestions ?: 10) - (gameSession.questionsAnswered ?: 0)}">10</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">Current Score</small><br>
+                            <strong class="text-primary" th:text="${gameSession.currentScore ?: 0}">0</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">Correct Answers</small><br>
+                            <strong class="text-success" th:text="${gameSession.correctAnswers ?: 0}">0</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">Accuracy</small><br>
+                            <strong class="text-info" th:text="${gameSession.accuracyPercentage != null ? (#numbers.formatDecimal(gameSession.accuracyPercentage, 1, 0) + '%') : '100%'}">100%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+    .option-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .option-card:hover {
+        background-color: #f8f9fa;
+        border-color: #007bff !important;
+    }
+
+    .option-card input[type="radio"]:checked + label {
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .option-card:has(input[type="radio"]:checked) {
+        background-color: #e3f2fd;
+        border-color: #007bff !important;
+    }
+</style>
+
+<script>
+    // Enhanced form interaction
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handlers to option cards
+        const optionCards = document.querySelectorAll('.option-card');
+        optionCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+
+                    // Remove selection from other cards
+                    optionCards.forEach(otherCard => {
+                        otherCard.classList.remove('selected');
+                    });
+
+                    // Add selection to this card
+                    this.classList.add('selected');
+                }
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '1' && e.key <= '4') {
+                const options = ['A', 'B', 'C', 'D'];
+                const index = parseInt(e.key) - 1;
+                if (index < options.length) {
+                    const radio = document.getElementById('answer' + options[index]);
+                    if (radio) {
+                        radio.checked = true;
+                        radio.closest('.option-card').click();
+                    }
+                }
+            }
+
+            // Enter key to submit
+            if (e.key === 'Enter') {
+                const selectedRadio = document.querySelector('input[name="answer"]:checked');
+                if (selectedRadio) {
+                    selectedRadio.closest('form').submit();
+                }
+            }
+        });
+
+        // Auto-focus on first option for accessibility
+        const firstOption = document.getElementById('answerA');
+        if (firstOption) {
+            firstOption.focus();
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

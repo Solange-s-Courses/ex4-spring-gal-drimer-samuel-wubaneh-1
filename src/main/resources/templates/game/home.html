@@ -65,7 +65,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h5 class="card-title">🎯 Games Played</h5>
-                    <h2 class="text-success" th:text="${userGamesPlayed}">0</h2>
+                    <h2 class="text-success" th:text="${userGamesPlayed ?: '0'}">0</h2>
                     <small class="text-muted">Total completed</small>
                 </div>
             </div>
@@ -151,7 +151,7 @@
 
                         <div class="text-center mt-3">
                             <small class="text-muted">
-                                Available Questions: <strong th:text="${totalQuestions}">0</strong>
+                                Available Questions: <strong th:text="${totalQuestions ?: '0'}">0</strong>
                             </small>
                         </div>
                     </div>
@@ -194,7 +194,7 @@
     </div>
 
     <!-- Recent Games History -->
-    <div class="row mb-4" th:if="${!#lists.isEmpty(recentGames)}">
+    <div class="row mb-4" th:if="${recentGames != null and !#lists.isEmpty(recentGames)}">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
@@ -213,10 +213,10 @@
                             </thead>
                             <tbody>
                             <tr th:each="game : ${recentGames}">
-                                <td th:text="${#temporals.format(game.sessionStart, 'MMM dd, yyyy')}">Date</td>
-                                <td><span class="badge bg-primary" th:text="${game.currentScore}">0</span></td>
-                                <td th:text="${#numbers.formatDecimal(game.accuracyPercentage, 1, 1)} + '%'">0%</td>
-                                <td><span class="badge bg-success" th:text="${game.customerPointsAwarded}">0</span></td>
+                                <td th:text="${game.sessionStart != null ? #temporals.format(game.sessionStart, 'MMM dd, yyyy') : 'N/A'}">Date</td>
+                                <td><span class="badge bg-primary" th:text="${game.currentScore ?: '0'}">0</span></td>
+                                <td th:text="${game.accuracyPercentage != null ? (#numbers.formatDecimal(game.accuracyPercentage, 1, 1) + '%') : '0%'}">0%</td>
+                                <td><span class="badge bg-success" th:text="${game.customerPointsAwarded ?: '0'}">0</span></td>
                             </tr>
                             </tbody>
                         </table>
@@ -235,19 +235,19 @@
                     <h5 class="mb-0">🏆 Top Scores</h5>
                 </div>
                 <div class="card-body">
-                    <div th:if="${#lists.isEmpty(topScores)}" class="text-center text-muted">
+                    <div th:if="${topScores == null or #lists.isEmpty(topScores)}" class="text-center text-muted">
                         <p>No games played yet!</p>
                     </div>
-                    <div th:unless="${#lists.isEmpty(topScores)}">
+                    <div th:unless="${topScores == null or #lists.isEmpty(topScores)}">
                         <ol class="list-group list-group-numbered">
                             <li th:each="score, iterStat : ${topScores}"
                                 th:if="${iterStat.index < 5}"
                                 class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" th:text="${score.user.username}">Username</div>
-                                    <small th:text="${#temporals.format(score.sessionEnd, 'MMM dd')}">Date</small>
+                                    <div class="fw-bold" th:text="${score.user != null ? score.user.username : 'Unknown'}">Username</div>
+                                    <small th:text="${score.sessionEnd != null ? #temporals.format(score.sessionEnd, 'MMM dd') : 'N/A'}">Date</small>
                                 </div>
-                                <span class="badge bg-primary rounded-pill" th:text="${score.currentScore}">0</span>
+                                <span class="badge bg-primary rounded-pill" th:text="${score.currentScore ?: '0'}">0</span>
                             </li>
                         </ol>
                         <div class="text-center mt-2">

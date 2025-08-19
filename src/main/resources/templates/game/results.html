@@ -66,7 +66,7 @@
                         <!-- Final Score -->
                         <div class="col-md-4 mb-4">
                             <div class="score-circle bg-primary">
-                                <span th:text="${session.currentScore}">0</span>
+                                <span th:text="${session.currentScore}" data-score th:data-score="${session.currentScore}">0</span>
                             </div>
                             <h5 class="mt-3">Final Score</h5>
                             <p class="text-muted">Total points earned</p>
@@ -75,7 +75,8 @@
                         <!-- Accuracy -->
                         <div class="col-md-4 mb-4">
                             <div class="score-circle bg-success">
-                                <span th:text="${#numbers.formatDecimal(session.accuracyPercentage, 1, 0)} + '%'">100%</span>
+                                <span th:text="${#numbers.formatDecimal(session.accuracyPercentage, 1, 0)} + '%'"
+                                      data-accuracy th:data-accuracy="${session.accuracyPercentage}">100%</span>
                             </div>
                             <h5 class="mt-3">Accuracy</h5>
                             <p class="text-muted">
@@ -261,23 +262,30 @@
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
     // Celebration animation on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Add some celebratory effects for high scores
-        const isNewHighScore = [[${isNewHighScore}]];
-        const accuracy = [[${session.accuracyPercentage}]];
+        // Thymeleaf will safely inject these values with null-safe defaults
+        var isNewHighScore = /*[[${isNewHighScore ?: false}]]*/ false;
+        var accuracy = /*[[${session.accuracyPercentage ?: 0}]]*/ 0;
+        var score = /*[[${session.currentScore ?: 0}]]*/ 0;
 
         if (isNewHighScore || accuracy >= 90) {
             // Add confetti or celebration effect here
             console.log('🎉 Celebration time!');
         }
     });
+</script>
 
+<script>
     // Share functionality
     function shareResults() {
-        const score = [[${session.currentScore}]];
-        const accuracy = [[${session.accuracyPercentage}]];
+        // Get values from DOM data attributes for safety
+        const scoreElement = document.querySelector('[data-score]');
+        const accuracyElement = document.querySelector('[data-accuracy]');
+
+        const score = scoreElement ? scoreElement.getAttribute('data-score') : '0';
+        const accuracy = accuracyElement ? parseFloat(accuracyElement.getAttribute('data-accuracy')) : 0;
 
         if (navigator.share) {
             navigator.share({
@@ -290,6 +298,9 @@
             const text = `I just scored ${score} points with ${accuracy.toFixed(1)}% accuracy in the Chain Store Loyalty Game! Can you beat my score?`;
             navigator.clipboard.writeText(text).then(() => {
                 alert('Results copied to clipboard!');
+            }).catch(() => {
+                // Fallback if clipboard access fails
+                prompt('Copy this text to share your results:', text);
             });
         }
     }

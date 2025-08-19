@@ -84,9 +84,16 @@ public class GameController {
 
         try {
             GameSession session = gameService.startNewGame(currentUser, totalQuestions);
+            System.out.println("=== DEBUG: Game Started ===");
+            System.out.println("Created session ID: " + session.getId());
+            System.out.println("Session user: " + session.getUser().getUsername());
+            System.out.println("Total questions: " + session.getTotalQuestions());
+
             redirectAttributes.addFlashAttribute("successMessage", "New game started! Good luck!");
             return "redirect:/game/play/" + session.getId();
         } catch (Exception e) {
+            System.err.println("ERROR starting game: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to start game: " + e.getMessage());
             return "redirect:/game";
         }
@@ -95,9 +102,6 @@ public class GameController {
     // Play Game - Show Current Question
     @GetMapping("/play/{sessionId}")
     public String playGame(@PathVariable Long sessionId, Model model, RedirectAttributes redirectAttributes) {
-        System.out.println("=== DEBUG: Play Game ===");
-        System.out.println("Session ID: " + sessionId);
-
         User currentUser = userService.getCurrentUser();
 
         if (currentUser == null) {
@@ -106,8 +110,11 @@ public class GameController {
 
         try {
             GameSession session = gameService.getSessionById(sessionId);
-            System.out.println("Found session: " + session.getId());
-            System.out.println("Session user: " + session.getUser().getUsername());
+
+            System.out.println("=== DEBUG playGame ===");
+            System.out.println("Session ID from URL: " + sessionId);
+            System.out.println("Session object ID: " + (session != null ? session.getId() : "null"));
+            System.out.println("Session user: " + (session != null && session.getUser() != null ? session.getUser().getUsername() : "null"));
             System.out.println("Current user: " + currentUser.getUsername());
 
             // Verify session belongs to current user
@@ -127,126 +134,86 @@ public class GameController {
             GameQuestion question = gameService.getNextQuestion(session);
 
             if (question == null) {
-                System.out.println("No more questions, redirecting to results");
+                // No more questions available, end the game
+                System.out.println("No more questions, ending game");
+                gameService.endGame(session);
                 return "redirect:/game/results/" + sessionId;
             }
 
-            System.out.println("Question loaded: " + question.getQuestionText());
-            System.out.println("Session questions answered: " + session.getQuestionsAnswered());
-            System.out.println("Session total questions: " + session.getTotalQuestions());
+            // IMPORTANT: Reload the session after getNextQuestion modifies it
+            session = gameService.getSessionById(sessionId);
 
-            model.addAttribute("session", session);
+            System.out.println("After getNextQuestion - Session ID: " + (session != null ? session.getId() : "null"));
+            System.out.println("Questions answered: " + session.getQuestionsAnswered());
+            System.out.println("Question loaded: " + (question != null ? question.getQuestionText() : "null"));
+
+            // Add all attributes to model
+            model.addAttribute("gameSession", session);
             model.addAttribute("question", question);
             model.addAttribute("questionNumber", session.getQuestionsAnswered() + 1);
 
-            System.out.println("=== DEBUG: Returning play template ===");
+
+            // Verify what we're sending to template
+            System.out.println("=== Model Attributes ===");
+            System.out.println("session in model: " + (session != null ? "Session[id=" + session.getId() + "]" : "null"));
+            System.out.println("question in model: " + (question != null ? "Question[id=" + question.getId() + "]" : "null"));
+
             return "game/play";
 
         } catch (Exception e) {
-            System.out.println("ERROR in playGame: " + e.getMessage());
+            System.err.println("ERROR in playGame: " + e.getMessage());
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Game session error: " + e.getMessage());
             return "redirect:/game";
         }
     }
 
-    // Submit Answer - IMPROVED VERSION
+    // Submit Answer - SIMPLIFIED VERSION
     @PostMapping("/play/answer")
-    public String submitAnswer(@RequestParam(value = "sessionId", required = false) String sessionIdStr,
-                               @RequestParam(value = "questionId", required = false) String questionIdStr,
-                               @RequestParam(value = "answer", required = false) String answer,
-                               Model model,
+    public String submitAnswer(@RequestParam Long sessionId,
+                               @RequestParam Long questionId,
+                               @RequestParam String answer,
                                RedirectAttributes redirectAttributes) {
-
-        System.out.println("=== DEBUG: Submit Answer ===");
-        System.out.println("Session ID String: '" + sessionIdStr + "'");
-        System.out.println("Question ID String: '" + questionIdStr + "'");
-        System.out.println("Answer: '" + answer + "'");
-
-        // Check for null or empty parameters
-        if (sessionIdStr == null || sessionIdStr.trim().isEmpty()) {
-            System.out.println("ERROR: Session ID is null or empty");
-            redirectAttributes.addFlashAttribute("errorMessage", "Session ID is missing");
-            return "redirect:/game";
-        }
-
-        if (questionIdStr == null || questionIdStr.trim().isEmpty()) {
-            System.out.println("ERROR: Question ID is null or empty");
-            redirectAttributes.addFlashAttribute("errorMessage", "Question ID is missing");
-            return "redirect:/game";
-        }
-
-        if (answer == null || answer.trim().isEmpty()) {
-            System.out.println("ERROR: Answer is null or empty");
-            redirectAttributes.addFlashAttribute("errorMessage", "Answer is missing");
-            return "redirect:/game";
-        }
-
-        // Parse IDs
-        Long sessionId;
-        Long questionId;
-
-        try {
-            sessionId = Long.parseLong(sessionIdStr.trim());
-            questionId = Long.parseLong(questionIdStr.trim());
-            System.out.println("Parsed Session ID: " + sessionId);
-            System.out.println("Parsed Question ID: " + questionId);
-        } catch (NumberFormatException e) {
-            System.out.println("ERROR: Cannot parse IDs - " + e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", "Invalid session or question ID");
-            return "redirect:/game";
-        }
 
         User currentUser = userService.getCurrentUser();
 
         if (currentUser == null) {
-            System.out.println("ERROR: No current user");
             return "redirect:/login";
         }
 
-        System.out.println("Current user: " + currentUser.getUsername());
-
         try {
             GameSession session = gameService.getSessionById(sessionId);
-            System.out.println("Found session: " + session.getId());
-            System.out.println("Session questions answered: " + session.getQuestionsAnswered());
-            System.out.println("Session current score: " + session.getCurrentScore());
 
             // Verify session belongs to current user
             if (!session.getUser().getId().equals(currentUser.getId())) {
-                System.out.println("ERROR: Session doesn't belong to user");
                 redirectAttributes.addFlashAttribute("errorMessage", "Access denied to this game session.");
                 return "redirect:/game";
             }
 
             // Submit answer
-            System.out.println("Submitting answer...");
             boolean isCorrect = gameService.submitAnswer(session, questionId, answer);
-            System.out.println("Answer is correct: " + isCorrect);
 
-            GameQuestion question = gameService.getQuestionById(questionId);
-            System.out.println("Question loaded: " + question.getQuestionText());
-
-            // Reload session to get updated values
+            // Get updated session
             session = gameService.getSessionById(sessionId);
-            System.out.println("Updated session - Questions answered: " + session.getQuestionsAnswered());
-            System.out.println("Updated session - Current score: " + session.getCurrentScore());
-            System.out.println("Updated session - Is completed: " + session.getIsCompleted());
 
-            // Show answer feedback - SIMPLE VERSION
-            model.addAttribute("session", session);
-            model.addAttribute("question", question);
-            model.addAttribute("userAnswer", answer);
-            model.addAttribute("isCorrect", isCorrect);
-            model.addAttribute("correctAnswer", question.getCorrectAnswer());
-            model.addAttribute("pointsEarned", isCorrect ? question.getPoints() : 0);
+            // Add flash message about the answer
+            if (isCorrect) {
+                redirectAttributes.addFlashAttribute("successMessage", "Correct! You earned points!");
+            } else {
+                GameQuestion question = gameService.getQuestionById(questionId);
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Incorrect. The correct answer was: " + question.getCorrectAnswer());
+            }
 
-            System.out.println("=== DEBUG: Returning simple answer template ===");
-            return "game/simple-answer";
+            // Check if game is complete
+            if (session.isGameOver()) {
+                return "redirect:/game/results/" + sessionId;
+            }
+
+            // Continue to next question
+            return "redirect:/game/play/" + sessionId;
 
         } catch (Exception e) {
-            System.out.println("ERROR in submitAnswer: " + e.getMessage());
-            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Error submitting answer: " + e.getMessage());
             return "redirect:/game";
         }
@@ -275,8 +242,11 @@ public class GameController {
                 session = gameService.endGame(session);
             }
 
+            // Calculate if this is a new high score
+            boolean isNewHighScore = session.getCurrentScore().equals(currentUser.getHighestGameScore());
+
             model.addAttribute("session", session);
-            model.addAttribute("isNewHighScore", session.getCurrentScore().equals(currentUser.getHighestGameScore()));
+            model.addAttribute("isNewHighScore", isNewHighScore);
             model.addAttribute("userAverageScore", gameService.getUserAverageScore(currentUser));
             model.addAttribute("globalAverageScore", gameService.getAverageScore());
 
@@ -307,9 +277,37 @@ public class GameController {
         }
     }
 
-    // End Current Game (quit early)
+    // End Current Game (quit early) - Path Variable Version
     @PostMapping("/end/{sessionId}")
     public String endGame(@PathVariable Long sessionId, RedirectAttributes redirectAttributes) {
+        User currentUser = userService.getCurrentUser();
+
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            GameSession session = gameService.getSessionById(sessionId);
+
+            // Verify session belongs to current user
+            if (!session.getUser().getId().equals(currentUser.getId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Access denied to this game session.");
+                return "redirect:/game";
+            }
+
+            gameService.endGame(session);
+            redirectAttributes.addFlashAttribute("successMessage", "Game ended. Your progress has been saved!");
+            return "redirect:/game/results/" + sessionId;
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error ending game: " + e.getMessage());
+            return "redirect:/game";
+        }
+    }
+
+    // Alternative endpoint that accepts sessionId as request parameter
+    @PostMapping("/end")
+    public String endGameAlternative(@RequestParam Long sessionId, RedirectAttributes redirectAttributes) {
         User currentUser = userService.getCurrentUser();
 
         if (currentUser == null) {
