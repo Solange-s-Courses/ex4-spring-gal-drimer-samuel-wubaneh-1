@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Form - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .form-section {
+            border-left: 4px solid #0d6efd;
+            padding-left: 15px;
+            margin-bottom: 2rem;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+        .character-count {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .store-map {
+            height: 200px;
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hours-input {
+            max-width: 120px;
+        }
+        .feature-toggle {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/admin">Chain Store Admin</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/admin">Dashboard</a>
+            <a class="nav-link" href="/admin/stores">Stores</a>
+            <a class="nav-link" href="/">Public Site</a>
+            <a class="nav-link" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/admin/stores">Stores</a></li>
+            <li class="breadcrumb-item active" th:text="${store.id == null ? 'Add Store' : 'Edit Store'}">Store Form</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0" th:text="${store.id == null ? 'Add New Store' : 'Edit Store'}">Store Form</h4>
+                            <small th:text="${store.id == null ? 'Create a new store location' : 'Update store information'}">Form description</small>
+                        </div>
+                        <div th:if="${store.id != null}">
+                            <span class="badge bg-light text-dark">Store ID: <span th:text="${store.id}">1</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Success/Error Messages -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span th:text="${successMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <span th:text="${errorMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <!-- Form Start -->
+                    <form th:action="@{/admin/stores/save}" method="post" th:object="${store}" id="storeForm" novalidate>
+                        <input type="hidden" th:field="*{id}">
+                        <input type="hidden" th:field="*{openingDate}">
+
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <h5 class="text-primary mb-3">Basic Information</h5>
+
+                            <div class="row">
+                                <!-- Store Name -->
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">
+                                            Store Name <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('name') ? 'form-control is-invalid' : 'form-control'}"
+                                               id="name"
+                                               th:field="*{name}"
+                                               required
+                                               maxlength="100"
+                                               placeholder="Enter store name (e.g., Chain Store Downtown)">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                                        <div class="form-text">
+                                            <span class="character-count" id="nameCount">0/100 characters</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Store Status -->
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Store Status</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="isActive" th:field="*{isActive}">
+                                            <label class="form-check-label" for="isActive">
+                                                <span class="badge bg-success" id="statusBadge">Active</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Toggle store operational status</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Store Manager -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="storeManager" class="form-label">Store Manager</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="storeManager"
+                                               th:field="*{storeManager}"
+                                               placeholder="Enter manager name">
+                                        <div class="form-text">Current store manager or supervisor</div>
+                                    </div>
+                                </div>
+
+                                <!-- Store Size -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="storeSizeSqft" class="form-label">Store Size (sq ft)</label>
+                                        <div class="input-group">
+                                            <input type="number"
+                                                   class="form-control"
+                                                   id="storeSizeSqft"
+                                                   th:field="*{storeSizeSqft}"
+                                                   min="0"
+                                                   placeholder="0">
+                                            <span class="input-group-text">sq ft</span>
+                                        </div>
+                                        <div class="form-text">Total floor space of the store</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Store Description</label>
+                                <textarea class="form-control"
+                                          id="description"
+                                          th:field="*{description}"
+                                          rows="3"
+                                          maxlength="500"
+                                          placeholder="Enter a brief description of this store location..."></textarea>
+                                <div class="form-text">
+                                    <span class="character-count" id="descriptionCount">0/500 characters</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Information Section -->
+                        <div class="form-section">
+                            <h5 class="text-success mb-3">Location Information</h5>
+
+                            <!-- Address -->
+                            <div class="mb-3">
+                                <label for="address" class="form-label">
+                                    Street Address <span class="required-field">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       th:class="${#fields.hasErrors('address') or addressError != null ? 'form-control is-invalid' : 'form-control'}"
+                                       id="address"
+                                       th:field="*{address}"
+                                       required
+                                       placeholder="Enter full street address">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></div>
+                                <div class="invalid-feedback" th:if="${addressError}" th:text="${addressError}"></div>
+                                <div class="form-text">Complete street address including number and street name</div>
+                            </div>
+
+                            <div class="row">
+                                <!-- City -->
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="city" class="form-label">
+                                            City <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('city') ? 'form-control is-invalid' : 'form-control'}"
+                                               id="city"
+                                               th:field="*{city}"
+                                               required
+                                               placeholder="Enter city">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></div>
+                                    </div>
+                                </div>
+
+                                <!-- State -->
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="state" class="form-label">
+                                            State <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('state') ? 'form-control is-invalid' : 'form-control'}"
+                                               id="state"
+                                               th:field="*{state}"
+                                               required
+                                               placeholder="Enter state (e.g., CA, NY, TX)">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('state')}" th:errors="*{state}"></div>
+                                        <div class="form-text">Enter state abbreviation or full name</div>
+                                    </div>
+                                </div>
+
+                                <!-- ZIP Code -->
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="zipCode" class="form-label">
+                                            ZIP Code <span class="required-field">*</span>
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('zipCode') ? 'form-control is-invalid' : 'form-control'}"
+                                               id="zipCode"
+                                               th:field="*{zipCode}"
+                                               required
+                                               pattern="[0-9]{5}(-[0-9]{4})?"
+                                               placeholder="12345 or 12345-6789">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('zipCode')}" th:errors="*{zipCode}"></div>
+                                        <div class="form-text">5-digit ZIP code or ZIP+4 format</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Contact Information Section -->
+                        <div class="form-section">
+                            <h5 class="text-info mb-3">Contact Information</h5>
+
+                            <div class="row">
+                                <!-- Phone -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">Phone Number</label>
+                                        <input type="tel"
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('phone') ? 'form-control is-invalid' : 'form-control'}"
+                                               id="phone"
+                                               th:field="*{phone}"
+                                               pattern="\([0-9]{3}\) [0-9]{3}-[0-9]{4}"
+                                               placeholder="(123) 456-7890">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                                        <div class="form-text">Store contact number in (123) 456-7890 format</div>
+                                    </div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email"
+                                               class="form-control"
+                                               id="email"
+                                               th:field="*{email}"
+                                               placeholder="store@chainstore.com">
+                                        <div class="form-text">Store contact email address</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Operating Hours Section -->
+                        <div class="form-section">
+                            <h5 class="text-warning mb-3">Operating Hours</h5>
+
+                            <div class="row">
+                                <!-- Working Days -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="workingDays" class="form-label">Working Days</label>
+                                        <select class="form-select" id="workingDays" th:field="*{workingDays}">
+                                            <option value="">Select working days</option>
+                                            <option value="Monday - Sunday">Monday - Sunday (7 days)</option>
+                                            <option value="Monday - Saturday">Monday - Saturday (6 days)</option>
+                                            <option value="Monday - Friday">Monday - Friday (5 days)</option>
+                                            <option value="Tuesday - Saturday">Tuesday - Saturday</option>
+                                            <option value="Sunday - Thursday">Sunday - Thursday</option>
+                                            <option value="Custom">Custom Schedule</option>
+                                        </select>
+                                        <div class="form-text">Days when the store is open</div>
+                                    </div>
+                                </div>
+
+                                <!-- Working Hours -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="workingHours" class="form-label">Working Hours</label>
+                                        <select class="form-select" id="workingHours" th:field="*{workingHours}">
+                                            <option value="">Select working hours</option>
+                                            <option value="6:00 AM - 10:00 PM">6:00 AM - 10:00 PM</option>
+                                            <option value="7:00 AM - 11:00 PM">7:00 AM - 11:00 PM</option>
+                                            <option value="8:00 AM - 9:00 PM">8:00 AM - 9:00 PM</option>
+                                            <option value="9:00 AM - 8:00 PM">9:00 AM - 8:00 PM</option>
+                                            <option value="24 Hours">24 Hours</option>
+                                            <option value="Custom">Custom Hours</option>
+                                        </select>
+                                        <div class="form-text">Daily operating hours</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Hours Builder -->
+                            <div class="mb-3" id="customHoursBuilder" style="display: none;">
+                                <label class="form-label">Custom Hours Schedule</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Monday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Monday">
+                                                    <label class="form-check-label" for="open-Monday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Monday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Monday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Tuesday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Tuesday">
+                                                    <label class="form-check-label" for="open-Tuesday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Tuesday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Tuesday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Wednesday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Wednesday">
+                                                    <label class="form-check-label" for="open-Wednesday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Wednesday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Wednesday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Thursday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Thursday">
+                                                    <label class="form-check-label" for="open-Thursday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Thursday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Thursday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Friday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Friday">
+                                                    <label class="form-check-label" for="open-Friday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Friday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Friday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Saturday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Saturday">
+                                                    <label class="form-check-label" for="open-Saturday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Saturday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Saturday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-2">
+                                                <strong>Sunday</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="open-Sunday">
+                                                    <label class="form-check-label" for="open-Sunday">Open</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="start-Sunday" placeholder="Open">
+                                            </div>
+                                            <div class="col-md-1 text-center">-</div>
+                                            <div class="col-md-3">
+                                                <input type="time" class="form-control hours-input" id="end-Sunday" placeholder="Close">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="applyCustomHours()">
+                                            Apply Custom Schedule
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Store Features Section -->
+                        <div class="form-section">
+                            <h5 class="text-secondary mb-3">Store Features & Amenities</h5>
+
+                            <div class="row">
+                                <!-- Parking -->
+                                <div class="col-md-6">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="parkingAvailable" th:field="*{parkingAvailable}">
+                                            <label class="form-check-label" for="parkingAvailable">
+                                                <strong>Parking Available</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Store provides customer parking spaces</small>
+                                    </div>
+                                </div>
+
+                                <!-- Drive-Through -->
+                                <div class="col-md-6">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="driveThrough" th:field="*{driveThrough}">
+                                            <label class="form-check-label" for="driveThrough">
+                                                <strong>Drive-Through Service</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Store offers drive-through service</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Features -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="wheelchairAccessible">
+                                            <label class="form-check-label" for="wheelchairAccessible">
+                                                <strong>Wheelchair Accessible</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">ADA compliant accessibility</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="wifiAvailable">
+                                            <label class="form-check-label" for="wifiAvailable">
+                                                <strong>Free WiFi</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Free customer WiFi available</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="curbsidePickup">
+                                            <label class="form-check-label" for="curbsidePickup">
+                                                <strong>Curbside Pickup</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Curbside pickup service</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Services -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="onlineOrders">
+                                            <label class="form-check-label" for="onlineOrders">
+                                                <strong>Online Orders</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Accepts online orders</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="delivery">
+                                            <label class="form-check-label" for="delivery">
+                                                <strong>Delivery Service</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Local delivery available</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="feature-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="giftCards">
+                                            <label class="form-check-label" for="giftCards">
+                                                <strong>Gift Cards</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Gift cards available</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Map Section -->
+                        <div class="form-section">
+                            <h5 class="text-dark mb-3">Location Preview</h5>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Address Summary</label>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <div id="addressPreview">
+                                                    <strong id="storeNamePreview">Store Name</strong><br>
+                                                    <span id="fullAddressPreview">Complete address will appear here</span><br>
+                                                    <small class="text-muted">
+                                                        Phone: <span id="phonePreview">Not provided</span><br>
+                                                        Hours: <span id="hoursPreview">Not set</span>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Map Placeholder</label>
+                                        <div class="store-map">
+                                            <div class="text-center text-muted">
+                                                <div class="display-1">MAP</div>
+                                                <p>Map integration would appear here</p>
+                                                <small>Showing store location</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/admin/stores" class="btn btn-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <span th:text="${store.id == null ? 'Create Store' : 'Update Store'}">Save</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Character counters
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('name');
+        const descriptionInput = document.getElementById('description');
+        const nameCount = document.getElementById('nameCount');
+        const descriptionCount = document.getElementById('descriptionCount');
+
+        function updateCharacterCount(input, counter, max) {
+            if (input && counter) {
+                const current = input.value.length;
+                counter.textContent = current + '/' + max + ' characters';
+            }
+        }
+
+        if (nameInput && nameCount) {
+            nameInput.addEventListener('input', () => updateCharacterCount(nameInput, nameCount, 100));
+            updateCharacterCount(nameInput, nameCount, 100);
+        }
+
+        if (descriptionInput && descriptionCount) {
+            descriptionInput.addEventListener('input', () => updateCharacterCount(descriptionInput, descriptionCount, 500));
+            updateCharacterCount(descriptionInput, descriptionCount, 500);
+        }
+    });
+
+    // Status badge toggle
+    function updateStatusBadge() {
+        const isActive = document.getElementById('isActive').checked;
+        const statusBadge = document.getElementById('statusBadge');
+        if (isActive) {
+            statusBadge.textContent = 'Active';
+            statusBadge.className = 'badge bg-success';
+        } else {
+            statusBadge.textContent = 'Inactive';
+            statusBadge.className = 'badge bg-danger';
+        }
+    }
+
+    // Address preview update
+    function updateAddressPreview() {
+        const storeName = document.getElementById('name').value || 'Store Name';
+        const address = document.getElementById('address').value || '';
+        const city = document.getElementById('city').value || '';
+        const state = document.getElementById('state').value || '';
+        const zipCode = document.getElementById('zipCode').value || '';
+        const phone = document.getElementById('phone').value || 'Not provided';
+        const workingHours = document.getElementById('workingHours').value || 'Not set';
+
+        document.getElementById('storeNamePreview').textContent = storeName;
+
+        let fullAddress = '';
+        if (address) fullAddress += address;
+        if (city) fullAddress += (fullAddress ? ', ' : '') + city;
+        if (state) fullAddress += (fullAddress ? ', ' : '') + state;
+        if (zipCode) fullAddress += (fullAddress ? ' ' : '') + zipCode;
+
+        document.getElementById('fullAddressPreview').textContent = fullAddress || 'Complete address will appear here';
+        document.getElementById('phonePreview').textContent = phone;
+        document.getElementById('hoursPreview').textContent = workingHours;
+    }
+
+    // Custom hours functionality
+    function applyCustomHours() {
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let customSchedule = '';
+
+        days.forEach(day => {
+            const isOpen = document.getElementById('open-' + day).checked;
+            if (isOpen) {
+                const startTime = document.getElementById('start-' + day).value;
+                const endTime = document.getElementById('end-' + day).value;
+                if (startTime && endTime) {
+                    if (customSchedule) customSchedule += '; ';
+                    customSchedule += day + ': ' + startTime + ' - ' + endTime;
+                }
+            }
+        });
+
+        if (customSchedule) {
+            document.getElementById('workingHours').value = customSchedule;
+            document.getElementById('customHoursBuilder').style.display = 'none';
+            updateAddressPreview();
+        }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const isActiveCheckbox = document.getElementById('isActive');
+        const workingHoursSelect = document.getElementById('workingHours');
+
+        // Address preview updates
+        ['name', 'address', 'city', 'state', 'zipCode', 'phone'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', updateAddressPreview);
+            }
+        });
+
+        if (workingHoursSelect) {
+            workingHoursSelect.addEventListener('change', function() {
+                if (this.value === 'Custom') {
+                    document.getElementById('customHoursBuilder').style.display = 'block';
+                } else {
+                    document.getElementById('customHoursBuilder').style.display = 'none';
+                }
+                updateAddressPreview();
+            });
+        }
+
+        if (isActiveCheckbox) {
+            isActiveCheckbox.addEventListener('change', updateStatusBadge);
+            updateStatusBadge();
+        }
+
+        // Initial preview update
+        updateAddressPreview();
+    });
+
+    // Form validation
+    document.getElementById('storeForm').addEventListener('submit', function(e) {
+        const requiredFields = ['name', 'address', 'city', 'state', 'zipCode'];
+        let hasErrors = false;
+
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !field.value.trim()) {
+                field.classList.add('is-invalid');
+                hasErrors = true;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (hasErrors) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

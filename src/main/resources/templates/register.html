@@ -35,7 +35,7 @@
                             <label for="username" class="form-label">Username:</label>
                             <input type="text"
                                    class="form-control"
-                                   th:class="${#fields.hasErrors('username')} or ${usernameError} ? 'form-control is-invalid' : 'form-control'"
+                                   th:class="${#fields.hasErrors('username') or usernameError != null ? 'form-control is-invalid' : 'form-control'}"
                                    id="username"
                                    th:field="*{username}"
                                    required
@@ -50,7 +50,7 @@
                             <label for="email" class="form-label">Email:</label>
                             <input type="email"
                                    class="form-control"
-                                   th:class="${#fields.hasErrors('email')} or ${emailError} ? 'form-control is-invalid' : 'form-control'"
+                                   th:class="${#fields.hasErrors('email') or emailError != null ? 'form-control is-invalid' : 'form-control'}"
                                    id="email"
                                    th:field="*{email}"
                                    required
@@ -65,7 +65,7 @@
                             <label for="password" class="form-label">Password:</label>
                             <input type="password"
                                    class="form-control"
-                                   th:class="${#fields.hasErrors('password')} or ${passwordError} ? 'form-control is-invalid' : 'form-control'"
+                                   th:class="${#fields.hasErrors('password') or passwordError != null ? 'form-control is-invalid' : 'form-control'}"
                                    id="password"
                                    th:field="*{password}"
                                    required
@@ -80,7 +80,7 @@
                             <label for="confirmPassword" class="form-label">Confirm Password:</label>
                             <input type="password"
                                    class="form-control"
-                                   th:class="${passwordError} ? 'form-control is-invalid' : 'form-control'"
+                                   th:class="${passwordError != null ? 'form-control is-invalid' : 'form-control'}"
                                    id="confirmPassword"
                                    name="confirmPassword"
                                    required
@@ -113,7 +113,7 @@
                     <div class="text-center mt-4">
                         <p class="text-muted">Already have an account?</p>
                         <a href="/login" class="btn btn-outline-primary">
-                            🔑 Login Here
+                            🔒 Login Here
                         </a>
                     </div>
 

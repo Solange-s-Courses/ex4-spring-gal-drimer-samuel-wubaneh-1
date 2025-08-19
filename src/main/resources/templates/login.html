@@ -6,6 +6,17 @@
     <title>Login - Ex4 Chain Store</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .logo-image {
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 80px;
+            max-width: 200px;
+            height: auto;
+        }
+    </style>
 </head>
 <body class="bg-light">
 <div class="container mt-5">
@@ -13,7 +24,13 @@
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white text-center">
-                    <h4 class="mb-0">🔐 Login to Chain Store</h4>
+                    <!-- Logo Image -->
+                    <div class="mb-3">
+                        <img th:src="@{/images/logo.png}"
+                             alt="Chain Store Logo"
+                             class="logo-image">
+                    </div>
+                    <h4 class="mb-0">Login to Chain Store</h4>
                     <small>Ex4 - Gal Drimer</small>
                 </div>
                 <div class="card-body">
@@ -66,7 +83,7 @@
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                🔑 Login
+                                Login
                             </button>
                         </div>
                     </form>
@@ -74,19 +91,19 @@
                     <div class="text-center mt-3">
                         <p class="text-muted">Don't have an account?</p>
                         <a href="/register" class="btn btn-outline-success">
-                            📝 Create Account
+                            Create Account
                         </a>
                     </div>
 
                     <div class="text-center mt-3">
                         <a href="/" class="btn btn-outline-secondary">
-                            🏠 Back to Home
+                            Back to Home
                         </a>
                     </div>
 
                     <!-- Temporary Test Credentials -->
                     <div class="alert alert-info mt-4">
-                        <h6>🧪 Test Credentials (Temporary):</h6>
+                        <h6>Test Credentials (Temporary):</h6>
                         <small>
                             <strong>Username:</strong> admin<br>
                             <strong>Password:</strong> admin123

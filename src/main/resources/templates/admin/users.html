@@ -48,7 +48,7 @@
                     <p class="text-muted">Manage customer accounts and admin users</p>
                 </div>
                 <div class="col-md-4 text-end">
-                    <span class="badge bg-primary fs-6" th:text="${totalCustomers ?: '0'} + ' total customers'">0 total customers</span>
+                    <span class="badge bg-primary fs-6" th:text="${totalCustomers != null ? totalCustomers : '0'} + ' total customers'">0 total customers</span>
                 </div>
             </div>
 
@@ -194,11 +194,11 @@
                         <div class="card-body">
                             <div class="row text-center">
                                 <div class="col-6">
-                                    <h5 class="text-primary" th:text="${totalCustomers ?: '0'}">0</h5>
+                                    <h5 class="text-primary" th:text="${totalCustomers != null ? totalCustomers : '0'}">0</h5>
                                     <small>Total Customers</small>
                                 </div>
                                 <div class="col-6">
-                                    <h5 class="text-success" th:text="${#lists.size(users?.![enabled])}">0</h5>
+                                    <h5 class="text-success" th:text="${users != null ? #lists.size(#lists.select(users, 'enabled')) : '0'}">0</h5>
                                     <small>Active Users</small>
                                 </div>
                             </div>
