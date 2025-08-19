@@ -47,12 +47,14 @@
     <div class="row">
         <!-- Product Image and Info -->
         <div class="col-md-6">
-            <!-- Product Image Placeholder -->
+            <!-- Product Image -->
             <div class="card">
-                <div class="card-body text-center bg-light" style="height: 400px;">
-                    <div class="d-flex align-items-center justify-content-center h-100">
-                        <span class="display-1">📦</span>
-                    </div>
+                <div class="card-body text-center" style="height: 400px; padding: 20px;">
+                    <img th:src="${product.imagePath != null and !#strings.isEmpty(product.imagePath)} ? ${product.imagePath} : @{/images/no-image.png}"
+                         th:alt="${product.name}"
+                         class="product-image-large"
+                         style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+                         onerror="this.src='/images/no-image.png'">
                 </div>
             </div>
         </div>
@@ -111,16 +113,6 @@
                     <div class="mb-4">
                         <h5>Description</h5>
                         <p th:text="${product.description}">Product description goes here...</p>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" th:disabled="${!product.inStock}">
-                            🛒 Add to Cart
-                        </button>
-                        <button class="btn btn-outline-primary">
-                            ❤️ Add to Wishlist
-                        </button>
                     </div>
                 </div>
             </div>

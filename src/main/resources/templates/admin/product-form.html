@@ -16,6 +16,32 @@
             align-items: center;
             justify-content: center;
             background-color: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .image-upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .image-upload-area:hover {
+            background-color: #e3f2fd;
+            border-color: #0056b3;
+        }
+        .image-upload-area.drag-over {
+            background-color: #e3f2fd;
+            border-color: #0056b3;
+            transform: scale(1.02);
         }
         .form-section {
             border-left: 4px solid #0d6efd;
@@ -85,9 +111,10 @@
                     </div>
 
                     <!-- Form Start -->
-                    <form th:action="@{/admin/products/save}" method="post" th:object="${product}" id="productForm" novalidate>
+                    <form th:action="@{/admin/products/save}" method="post" th:object="${product}" id="productForm" enctype="multipart/form-data" novalidate>
                         <input type="hidden" th:field="*{id}">
                         <input type="hidden" th:field="*{createdDate}">
+                        <input type="hidden" th:field="*{imagePath}" id="imagePathField">
 
                         <!-- Basic Information Section -->
                         <div class="form-section">
@@ -259,6 +286,55 @@
                             </div>
                         </div>
 
+                        <!-- Product Image Section -->
+                        <div class="form-section">
+                            <h5 class="text-warning mb-3">Product Image</h5>
+
+                            <div class="row">
+                                <!-- Image Upload Area -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Product Image</label>
+                                        <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageUpload').click()">
+                                            <div id="uploadText">
+                                                <i class="display-4 text-muted">📸</i>
+                                                <p class="mt-2 mb-1"><strong>Click to upload image</strong></p>
+                                                <p class="text-muted small">or drag and drop here</p>
+                                                <p class="text-muted small">Supports: JPG, PNG, GIF (Max 5MB)</p>
+                                            </div>
+                                        </div>
+                                        <input type="file"
+                                               id="imageUpload"
+                                               name="imageFile"
+                                               accept="image/*"
+                                               style="display: none;"
+                                               onchange="previewImage(this)">
+                                        <div class="form-text">Upload a high-quality product image (optional)</div>
+                                    </div>
+                                </div>
+
+                                <!-- Image Preview -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Image Preview</label>
+                                        <div class="image-preview" id="imagePreview">
+                                            <img th:src="${product.imagePath != null and !#strings.isEmpty(product.imagePath)} ? ${product.imagePath} : @{/images/no-image.png}"
+                                                 id="previewImg"
+                                                 alt="Product Preview">
+                                        </div>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id="removeImageBtn" onclick="removeImage()" style="display: none;">
+                                                Remove Image
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            Current image: <span id="currentImageText" th:text="${product.imagePath != null and !#strings.isEmpty(product.imagePath)} ? 'Custom image' : 'Default placeholder'">Default placeholder</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Description Section -->
                         <div class="form-section">
                             <h5 class="text-info mb-3">Product Description</h5>
@@ -296,6 +372,103 @@
 </div>
 
 <script>
+    // Image upload and preview functionality
+    let uploadedImageFile = null;
+
+    function previewImage(input) {
+        const file = input.files[0];
+        if (file) {
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                input.value = '';
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file');
+                input.value = '';
+                return;
+            }
+
+            uploadedImageFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImg = document.getElementById('previewImg');
+                const uploadText = document.getElementById('uploadText');
+                const removeBtn = document.getElementById('removeImageBtn');
+                const currentImageText = document.getElementById('currentImageText');
+
+                previewImg.src = e.target.result;
+                uploadText.style.display = 'none';
+                removeBtn.style.display = 'inline-block';
+                currentImageText.textContent = 'New uploaded image: ' + file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeImage() {
+        const input = document.getElementById('imageUpload');
+        const previewImg = document.getElementById('previewImg');
+        const uploadText = document.getElementById('uploadText');
+        const removeBtn = document.getElementById('removeImageBtn');
+        const currentImageText = document.getElementById('currentImageText');
+
+        input.value = '';
+        uploadedImageFile = null;
+        previewImg.src = '/images/no-image.png';
+        uploadText.style.display = 'block';
+        removeBtn.style.display = 'none';
+        currentImageText.textContent = 'Default placeholder';
+
+        // Clear the hidden field
+        document.getElementById('imagePathField').value = '';
+    }
+
+    // Drag and drop functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('imageUploadArea');
+        const fileInput = document.getElementById('imageUpload');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            uploadArea.classList.add('drag-over');
+        }
+
+        function unhighlight() {
+            uploadArea.classList.remove('drag-over');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                previewImage(fileInput);
+            }
+        }
+    });
+
     // Character counters
     document.addEventListener('DOMContentLoaded', function() {
         const nameInput = document.getElementById('name');

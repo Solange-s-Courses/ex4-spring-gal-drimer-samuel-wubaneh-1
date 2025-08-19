@@ -58,9 +58,12 @@ public class SecurityConfig {
         http
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(authz -> authz
+                        // STATIC RESOURCES - MUST BE FIRST AND MOST SPECIFIC
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**").permitAll()
+                        .requestMatchers("/favicon.ico").permitAll()
+
                         // Public pages - no authentication required
                         .requestMatchers("/", "/home", "/test").permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/register", "/login").permitAll()
                         .requestMatchers("/h2-console/**").permitAll() // For H2 database console
 
@@ -69,6 +72,9 @@ public class SecurityConfig {
 
                         // Customer/User pages - require authentication
                         .requestMatchers("/profile", "/game/**").hasAnyRole("CUSTOMER", "ADMIN")
+
+                        // Public access to products and stores (for browsing)
+                        .requestMatchers("/products/**", "/stores/**").permitAll()
 
                         // All other pages require authentication
                         .anyRequest().authenticated()

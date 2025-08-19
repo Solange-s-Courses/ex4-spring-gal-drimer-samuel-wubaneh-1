@@ -11,11 +11,11 @@
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="/admin">⚙️ Chain Store Admin</a>
+        <a class="navbar-brand" href="/admin">âš™ï¸ Chain Store Admin</a>
         <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="/admin">📊 Dashboard</a>
-            <a class="nav-link" href="/admin/questions">❓ Questions</a>
-            <a class="nav-link" href="/">🏠 Public Site</a>
+            <a class="nav-link" href="/admin">ðŸ“Š Dashboard</a>
+            <a class="nav-link" href="/admin/questions">â“ Questions</a>
+            <a class="nav-link" href="/">ðŸ  Public Site</a>
         </div>
     </div>
 </nav>
@@ -25,7 +25,7 @@
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header">
-                    <h4 th:text="${question.id == null ? '➕ Add New Game Question' : '✏️ Edit Game Question'}">Question Form</h4>
+                    <h4 th:text="${question.id == null ? 'âž• Add New Game Question' : 'âœï¸ Edit Game Question'}">Question Form</h4>
                     <small class="text-muted">Create engaging questions for the customer loyalty game</small>
                 </div>
                 <div class="card-body">
@@ -194,7 +194,7 @@
                         <!-- Question Preview -->
                         <div class="card bg-light mb-4">
                             <div class="card-header">
-                                <h6 class="mb-0">👁️ Question Preview</h6>
+                                <h6 class="mb-0">ðŸ‘ï¸ Question Preview</h6>
                                 <small class="text-muted">This is how your question will appear to players</small>
                             </div>
                             <div class="card-body">
@@ -239,9 +239,9 @@
 
                         <!-- Submit Buttons -->
                         <div class="d-flex justify-content-between">
-                            <a href="/admin/questions" class="btn btn-secondary">← Cancel</a>
+                            <a href="/admin/questions" class="btn btn-secondary">â† Cancel</a>
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <span th:text="${question.id == null ? '➕ Create Question' : '💾 Update Question'}">Save</span>
+                                <span th:text="${question.id == null ? 'âž• Create Question' : 'ðŸ’¾ Update Question'}">Save</span>
                             </button>
                         </div>
                     </form>

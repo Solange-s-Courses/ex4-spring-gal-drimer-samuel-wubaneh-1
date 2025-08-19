@@ -15,10 +15,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.*;
 import java.util.List;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/admin")
@@ -157,6 +161,7 @@ public class AdminController {
     @PostMapping("/products/save")
     public String saveProduct(@Valid @ModelAttribute Product product,
                               BindingResult bindingResult,
+                              @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
                               Model model,
                               RedirectAttributes redirectAttributes) {
 
@@ -167,7 +172,7 @@ public class AdminController {
         }
 
         try {
-            // Check for barcode uniqueness if it's a new product or barcode changed
+            // Check for barcode uniqueness
             if (product.getId() == null || productService.isBarcodeTaken(product.getBarcode(), product.getId())) {
                 if (productService.isBarcodeTaken(product.getBarcode())) {
                     model.addAttribute("barcodeError", "Barcode already exists");
@@ -177,11 +182,76 @@ public class AdminController {
                 }
             }
 
+            // Handle image upload
+            if (imageFile != null && !imageFile.isEmpty()) {
+                try {
+                    // Validate file size (5MB max)
+                    if (imageFile.getSize() > 5 * 1024 * 1024) {
+                        model.addAttribute("imageError", "Image file size must be less than 5MB");
+                        model.addAttribute("categories", productService.getAllCategories());
+                        model.addAttribute("brands", productService.getAllBrands());
+                        return "admin/product-form";
+                    }
+
+                    // Validate file type
+                    String contentType = imageFile.getContentType();
+                    if (contentType == null || !contentType.startsWith("image/")) {
+                        model.addAttribute("imageError", "Please upload a valid image file (JPG, PNG, GIF)");
+                        model.addAttribute("categories", productService.getAllCategories());
+                        model.addAttribute("brands", productService.getAllBrands());
+                        return "admin/product-form";
+                    }
+
+                    // Generate unique filename
+                    String originalFilename = imageFile.getOriginalFilename();
+                    String fileExtension = "";
+                    if (originalFilename != null && originalFilename.contains(".")) {
+                        fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                    }
+
+                    String uniqueFilename = "product_" + System.currentTimeMillis() + "_" +
+                            UUID.randomUUID().toString().substring(0, 8) + fileExtension;
+
+                    // Create products directory if it doesn't exist
+                    Path uploadDir = Paths.get("src/main/resources/static/images/products");
+                    if (!Files.exists(uploadDir)) {
+                        Files.createDirectories(uploadDir);
+                    }
+
+                    // Save the file
+                    Path filePath = uploadDir.resolve(uniqueFilename);
+                    Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                    // Set the image path - FIXED: Use correct path format
+                    product.setImagePath("/images/products/" + uniqueFilename);
+
+                    System.out.println("Image uploaded successfully: " + uniqueFilename);
+                    System.out.println("Image path set to: " + product.getImagePath());
+
+                } catch (IOException e) {
+                    System.err.println("Failed to upload image: " + e.getMessage());
+                    e.printStackTrace();
+                    model.addAttribute("imageError", "Failed to upload image. Please try again.");
+                    model.addAttribute("categories", productService.getAllCategories());
+                    model.addAttribute("brands", productService.getAllBrands());
+                    return "admin/product-form";
+                }
+            } else {
+                // No image uploaded
+                if (product.getId() == null) {
+                    // New product without image - use default
+                    product.setImagePath(null); // Set to null instead of default path
+                }
+                // For existing products, keep the current image path if no new image is uploaded
+            }
+
             productService.saveProduct(product);
             redirectAttributes.addFlashAttribute("successMessage",
                     product.getId() == null ? "Product created successfully!" : "Product updated successfully!");
 
         } catch (Exception e) {
+            System.err.println("Error saving product: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Error saving product: " + e.getMessage());
         }
 
@@ -192,6 +262,18 @@ public class AdminController {
     public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             Product product = productService.getProductById(id);
+
+            // Delete the image file if it's not the default
+            if (product.getImagePath() != null && !product.getImagePath().equals("/images/no-image.png")) {
+                try {
+                    Path imagePath = Paths.get("src/main/resources/static" + product.getImagePath());
+                    Files.deleteIfExists(imagePath);
+                    System.out.println("Deleted image file: " + product.getImagePath());
+                } catch (IOException e) {
+                    System.err.println("Failed to delete image file: " + e.getMessage());
+                }
+            }
+
             productService.deleteProduct(id);
             redirectAttributes.addFlashAttribute("successMessage", "Product '" + product.getName() + "' has been deleted.");
         } catch (Exception e) {
@@ -464,6 +546,4 @@ public class AdminController {
         }
         return "redirect:/admin/reviews?type=store";
     }
-
-
 }
