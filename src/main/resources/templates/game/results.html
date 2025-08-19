@@ -46,12 +46,14 @@
 </nav>
 
 <div class="container mt-4">
+
+
     <!-- Results Header -->
     <div class="row justify-content-center mb-4">
         <div class="col-12 text-center">
-            <h1 class="display-4" th:class="${isNewHighScore ? 'text-warning celebration' : ''}">
-                <span th:if="${isNewHighScore}">🏆 New High Score!</span>
-                <span th:unless="${isNewHighScore}">🎯 Game Complete!</span>
+            <h1 class="display-4" th:class="${(isNewHighScore != null and isNewHighScore) ? 'text-warning celebration' : ''}">
+                <span th:if="${isNewHighScore != null and isNewHighScore}">🏆 New High Score!</span>
+                <span th:unless="${isNewHighScore != null and isNewHighScore}">🎯 Game Complete!</span>
             </h1>
             <p class="lead text-muted">Here are your final results</p>
         </div>
@@ -66,7 +68,8 @@
                         <!-- Final Score -->
                         <div class="col-md-4 mb-4">
                             <div class="score-circle bg-primary">
-                                <span th:text="${session.currentScore}" data-score th:data-score="${session.currentScore}">0</span>
+                                <span th:text="${session?.currentScore ?: '0'}"
+                                      data-score th:data-score="${session?.currentScore ?: '0'}">0</span>
                             </div>
                             <h5 class="mt-3">Final Score</h5>
                             <p class="text-muted">Total points earned</p>
@@ -75,20 +78,20 @@
                         <!-- Accuracy -->
                         <div class="col-md-4 mb-4">
                             <div class="score-circle bg-success">
-                                <span th:text="${#numbers.formatDecimal(session.accuracyPercentage, 1, 0)} + '%'"
-                                      data-accuracy th:data-accuracy="${session.accuracyPercentage}">100%</span>
+                                <span th:text="${session?.accuracyPercentage != null ? (#numbers.formatDecimal(session.accuracyPercentage, 1, 0) + '%') : '0%'}"
+                                      data-accuracy th:data-accuracy="${session?.accuracyPercentage ?: 0}">0%</span>
                             </div>
                             <h5 class="mt-3">Accuracy</h5>
                             <p class="text-muted">
-                                <span th:text="${session.correctAnswers}">0</span> out of
-                                <span th:text="${session.questionsAnswered}">0</span> correct
+                                <span th:text="${session?.correctAnswers ?: '0'}">0</span> out of
+                                <span th:text="${session?.questionsAnswered ?: '0'}">0</span> correct
                             </p>
                         </div>
 
                         <!-- Customer Points Earned -->
                         <div class="col-md-4 mb-4">
                             <div class="score-circle bg-warning">
-                                <span th:text="${session.customerPointsAwarded}">0</span>
+                                <span th:text="${session?.customerPointsAwarded ?: '0'}">0</span>
                             </div>
                             <h5 class="mt-3">Loyalty Points</h5>
                             <p class="text-muted">Added to your account</p>
@@ -109,38 +112,38 @@
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-6 col-md-3 mb-3">
-                            <div class="h4 text-primary" th:text="${session.totalQuestions}">10</div>
+                            <div class="h4 text-primary" th:text="${session?.totalQuestions ?: '0'}">0</div>
                             <small class="text-muted">Total Questions</small>
                         </div>
                         <div class="col-6 col-md-3 mb-3">
-                            <div class="h4 text-success" th:text="${session.correctAnswers}">8</div>
+                            <div class="h4 text-success" th:text="${session?.correctAnswers ?: '0'}">0</div>
                             <small class="text-muted">Correct</small>
                         </div>
                         <div class="col-6 col-md-3 mb-3">
-                            <div class="h4 text-danger" th:text="${session.questionsAnswered - session.correctAnswers}">2</div>
+                            <div class="h4 text-danger" th:text="${(session?.questionsAnswered ?: 0) - (session?.correctAnswers ?: 0)}">0</div>
                             <small class="text-muted">Incorrect</small>
                         </div>
                         <div class="col-6 col-md-3 mb-3">
-                            <div class="h4 text-info" th:text="${session.durationMinutes} + ' min'">5 min</div>
+                            <div class="h4 text-info" th:text="${(session?.durationMinutes ?: 0)} + ' min'">0 min</div>
                             <small class="text-muted">Duration</small>
                         </div>
                     </div>
 
                     <!-- Performance Grade -->
                     <div class="text-center mt-3">
-                        <div th:if="${session.accuracyPercentage >= 90}" class="alert alert-success">
+                        <div th:if="${session != null and session.accuracyPercentage != null and session.accuracyPercentage >= 90}" class="alert alert-success">
                             <h5>🌟 Excellent Performance!</h5>
                             <p class="mb-0">You're a Chain Store expert! Outstanding knowledge of our products and stores.</p>
                         </div>
-                        <div th:if="${session.accuracyPercentage >= 70 and session.accuracyPercentage < 90}" class="alert alert-info">
+                        <div th:if="${session != null and session.accuracyPercentage != null and session.accuracyPercentage >= 70 and session.accuracyPercentage < 90}" class="alert alert-info">
                             <h5>👍 Good Job!</h5>
                             <p class="mb-0">Solid performance! You know our chain store well.</p>
                         </div>
-                        <div th:if="${session.accuracyPercentage >= 50 and session.accuracyPercentage < 70}" class="alert alert-warning">
+                        <div th:if="${session != null and session.accuracyPercentage != null and session.accuracyPercentage >= 50 and session.accuracyPercentage < 70}" class="alert alert-warning">
                             <h5>📚 Keep Learning!</h5>
                             <p class="mb-0">Not bad! Spend more time browsing our stores and products to improve.</p>
                         </div>
-                        <div th:if="${session.accuracyPercentage < 50}" class="alert alert-light">
+                        <div th:if="${session == null or session.accuracyPercentage == null or session.accuracyPercentage < 50}" class="alert alert-light">
                             <h5>🎯 Practice Makes Perfect!</h5>
                             <p class="mb-0">Don't give up! Visit our stores and explore our products to learn more.</p>
                         </div>
@@ -161,30 +164,30 @@
                     <div class="row text-center">
                         <div class="col-md-4 mb-3">
                             <h6 class="text-muted">Your Average</h6>
-                            <div class="h4 text-info" th:text="${userAverageScore != null ? #numbers.formatDecimal(userAverageScore, 1, 1) : 'N/A'}">0.0</div>
+                            <div class="h4 text-info" th:text="${userAverageScore != null ? #numbers.formatDecimal(userAverageScore, 1, 1) : '0.0'}">0.0</div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <h6 class="text-muted">Global Average</h6>
-                            <div class="h4 text-secondary" th:text="${globalAverageScore != null ? #numbers.formatDecimal(globalAverageScore, 1, 1) : 'N/A'}">0.0</div>
+                            <div class="h4 text-secondary" th:text="${globalAverageScore != null ? #numbers.formatDecimal(globalAverageScore, 1, 1) : '0.0'}">0.0</div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <h6 class="text-muted">Your Best</h6>
-                            <div class="h4 text-warning" th:text="${session.user.highestGameScore}">0</div>
+                            <div class="h4 text-warning" th:text="${session?.user?.highestGameScore ?: '0'}">0</div>
                         </div>
                     </div>
 
                     <!-- Achievement Badges -->
                     <div class="text-center mt-3">
-                        <div th:if="${isNewHighScore}" class="mb-2">
+                        <div th:if="${isNewHighScore != null and isNewHighScore}" class="mb-2">
                             <span class="badge bg-warning fs-6 celebration">🏆 New Personal Best!</span>
                         </div>
-                        <div th:if="${session.accuracyPercentage == 100}" class="mb-2">
+                        <div th:if="${session != null and session.accuracyPercentage != null and session.accuracyPercentage == 100}" class="mb-2">
                             <span class="badge bg-success fs-6">🎯 Perfect Score!</span>
                         </div>
-                        <div th:if="${session.currentScore >= globalAverageScore}" class="mb-2">
+                        <div th:if="${session != null and session.currentScore != null and globalAverageScore != null and session.currentScore >= globalAverageScore}" class="mb-2">
                             <span class="badge bg-primary fs-6">📊 Above Average!</span>
                         </div>
-                        <div th:if="${session.durationMinutes <= 3}" class="mb-2">
+                        <div th:if="${session != null and session.durationMinutes != null and session.durationMinutes <= 3}" class="mb-2">
                             <span class="badge bg-info fs-6">⚡ Speed Demon!</span>
                         </div>
                     </div>
@@ -206,16 +209,16 @@
                             <h6>Customer Loyalty Points:</h6>
                             <ul class="list-unstyled">
                                 <li>✅ Game completion bonus: <strong>20 points</strong></li>
-                                <li>✅ Accuracy bonus: <strong th:text="${session.customerPointsAwarded - 20}">0</strong> points</li>
+                                <li>✅ Accuracy bonus: <strong th:text="${(session?.customerPointsAwarded ?: 20) - 20}">0</strong> points</li>
                                 <li class="border-top pt-2 mt-2">
-                                    <strong>Total earned: <span th:text="${session.customerPointsAwarded}">20</span> points</strong>
+                                    <strong>Total earned: <span th:text="${session?.customerPointsAwarded ?: '0'}">0</span> points</strong>
                                 </li>
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <h6>Account Updates:</h6>
                             <ul class="list-unstyled">
-                                <li th:if="${isNewHighScore}">🏆 New high score recorded</li>
+                                <li th:if="${isNewHighScore != null and isNewHighScore}">🏆 New high score recorded</li>
                                 <li>📈 Game statistics updated</li>
                                 <li>⭐ Loyalty points added to account</li>
                                 <li>📊 Profile progress updated</li>
@@ -252,7 +255,7 @@
                 <div class="card-body">
                     <h6 class="card-title">📱 Share Your Achievement</h6>
                     <p class="card-text small text-muted">
-                        I just scored <strong th:text="${session.currentScore}">0</strong> points in the Chain Store Loyalty Game!
+                        I just scored <strong th:text="${session?.currentScore ?: '0'}">0</strong> points in the Chain Store Loyalty Game!
                         Can you beat my score?
                     </p>
                     <button class="btn btn-outline-primary btn-sm" onclick="shareResults()">Share Score</button>
@@ -267,11 +270,15 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Thymeleaf will safely inject these values with null-safe defaults
         var isNewHighScore = /*[[${isNewHighScore ?: false}]]*/ false;
-        var accuracy = /*[[${session.accuracyPercentage ?: 0}]]*/ 0;
-        var score = /*[[${session.currentScore ?: 0}]]*/ 0;
+        var accuracy = /*[[${session?.accuracyPercentage ?: 0}]]*/ 0;
+        var score = /*[[${session?.currentScore ?: 0}]]*/ 0;
+
+        console.log('Results page loaded:');
+        console.log('- New high score:', isNewHighScore);
+        console.log('- Accuracy:', accuracy);
+        console.log('- Score:', score);
 
         if (isNewHighScore || accuracy >= 90) {
-            // Add confetti or celebration effect here
             console.log('🎉 Celebration time!');
         }
     });
@@ -304,16 +311,6 @@
             });
         }
     }
-
-    // Auto-redirect to game home after 30 seconds (optional)
-    // Uncomment to enable auto-redirect
-    /*
-    setTimeout(function() {
-        if (confirm('Would you like to play another game?')) {
-            window.location.href = '/game';
-        }
-    }, 30000);
-    */
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

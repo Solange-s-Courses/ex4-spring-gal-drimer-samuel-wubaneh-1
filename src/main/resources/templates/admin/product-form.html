@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Form - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/admin">⚙️ Chain Store Admin</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/admin">📊 Dashboard</a>
+            <a class="nav-link" href="/admin/products">📦 Products</a>
+            <a class="nav-link" href="/">🏠 Public Site</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 th:text="${product.id == null ? '➕ Add New Product' : '✏️ Edit Product'}">Product Form</h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/products/save}" method="post" th:object="${product}">
+                        <input type="hidden" th:field="*{id}">
+
+                        <!-- Product Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control"
+                                   th:class="${#fields.hasErrors('name') ? 'form-control is-invalid' : 'form-control'}"
+                                   id="name" th:field="*{name}" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+
+                        <!-- Barcode -->
+                        <div class="mb-3">
+                            <label for="barcode" class="form-label">Barcode *</label>
+                            <input type="text" class="form-control"
+                                   th:class="${#fields.hasErrors('barcode') or barcodeError ? 'form-control is-invalid' : 'form-control'}"
+                                   id="barcode" th:field="*{barcode}" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('barcode')}" th:errors="*{barcode}"></div>
+                            <div class="invalid-feedback" th:if="${barcodeError}" th:text="${barcodeError}"></div>
+                        </div>
+
+                        <!-- Category and Brand -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category *</label>
+                                    <input list="categories" class="form-control"
+                                           th:class="${#fields.hasErrors('category') ? 'form-control is-invalid' : 'form-control'}"
+                                           id="category" th:field="*{category}" required>
+                                    <datalist id="categories">
+                                        <option th:each="cat : ${categories}" th:value="${cat}">
+                                    </datalist>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="brand" class="form-label">Brand</label>
+                                    <input list="brands" class="form-control" id="brand" th:field="*{brand}">
+                                    <datalist id="brands">
+                                        <option th:each="brand : ${brands}" th:value="${brand}">
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price and Weight -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="price" class="form-label">Price ($) *</label>
+                                    <input type="number" step="0.01" min="0" class="form-control"
+                                           th:class="${#fields.hasErrors('price') ? 'form-control is-invalid' : 'form-control'}"
+                                           id="price" th:field="*{price}" required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="weight" class="form-label">Weight (kg)</label>
+                                    <input type="number" step="0.1" min="0" class="form-control" id="weight" th:field="*{weight}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="stockQuantity" class="form-label">Stock Quantity</label>
+                                    <input type="number" min="0" class="form-control" id="stockQuantity" th:field="*{stockQuantity}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="inStock" th:field="*{inStock}">
+                                        <label class="form-check-label" for="inStock">
+                                            Product is in stock
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" rows="4"
+                                      placeholder="Detailed product description..."></textarea>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="/admin/products" class="btn btn-secondary">← Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span th:text="${product.id == null ? '➕ Create Product' : '💾 Update Product'}">Save</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

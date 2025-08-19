@@ -184,4 +184,13 @@ public class UserService implements UserDetailsService {
     public Integer getHighestGameScore() {
         return userRepository.getHighestGameScore();
     }
+    /**
+     * Search customers by username or email
+     */
+    public List<User> searchCustomers(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return getAllCustomers();
+        }
+        return userRepository.searchCustomers(searchTerm.trim());
+    }
 }

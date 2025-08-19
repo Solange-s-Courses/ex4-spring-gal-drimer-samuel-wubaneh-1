@@ -20,19 +20,6 @@
 </nav>
 
 <div class="container mt-4">
-    <!-- DEBUG SECTION - Add this temporarily to see what's happening -->
-    <div class="alert alert-info">
-        <h6>🔍 Debug Information:</h6>
-        <p><strong>GameSession Object:</strong> <span th:text="${gameSession}">null</span></p>
-        <p><strong>Session ID:</strong> <span th:text="${gameSession?.id}">null</span></p>
-        <p><strong>Session User:</strong> <span th:text="${gameSession?.user?.username}">null</span></p>
-        <p><strong>Questions Answered:</strong> <span th:text="${gameSession?.questionsAnswered}">null</span></p>
-        <p><strong>Total Questions:</strong> <span th:text="${gameSession?.totalQuestions}">null</span></p>
-        <p><strong>Question Object:</strong> <span th:text="${question}">null</span></p>
-        <p><strong>Question Number:</strong> <span th:text="${questionNumber}">null</span></p>
-        <p><strong>Current URL:</strong> /game/play/<span th:text="${gameSession?.id ?: 'unknown'}">unknown</span></p>
-    </div>
-
     <!-- Success/Error Messages -->
     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${successMessage}"></span>
@@ -174,47 +161,28 @@
     <!-- Game Actions -->
     <div class="row mt-4" th:if="${question != null}">
         <div class="col-12 text-center">
-            <!-- Multiple quit options for debugging -->
-
-            <!-- Option 1: Simple redirect to home -->
+            <!-- Simple redirect to home -->
             <a th:href="@{/game}"
                class="btn btn-outline-secondary me-2"
                onclick="return confirm('Are you sure you want to quit the game? You will return to game home.')">
                 🏠 Quit to Home
             </a>
 
-            <!-- Option 2: POST with path variable (if gameSession.id exists) -->
+            <!-- POST with path variable -->
             <form th:if="${gameSession?.id != null}"
                   th:action="@{'/game/end/' + ${gameSession.id}}"
                   method="post"
                   style="display: inline;"
                   onsubmit="return confirm('Are you sure you want to quit the game? Your progress will be saved.')">
                 <button type="submit" class="btn btn-outline-danger me-2">
-                    🚪 Quit & See Results (Path)
+                    🚪 Quit & See Results
                 </button>
             </form>
 
-            <!-- Option 3: POST with request parameter -->
-            <form th:if="${gameSession?.id != null}"
-                  action="/game/end"
-                  method="post"
-                  style="display: inline;"
-                  onsubmit="return confirm('Are you sure you want to quit the game? Your progress will be saved.')">
-                <input type="hidden" name="sessionId" th:value="${gameSession.id}">
-                <button type="submit" class="btn btn-outline-warning me-2">
-                    🚪 Quit & See Results (Param)
-                </button>
-            </form>
-
-            <!-- Option 4: JavaScript-based (works even if session.id is null in Thymeleaf) -->
+            <!-- JavaScript-based quit button -->
             <button onclick="quitGameJS()" class="btn btn-outline-info me-2">
-                🚪 Quit & See Results (JS)
+                🚪 End Game (JS)
             </button>
-
-            <!-- Fallback if no session ID -->
-            <div th:if="${gameSession?.id == null}" class="alert alert-warning mt-2">
-                <small>⚠️ Session ID is null - using fallback quit options only</small>
-            </div>
         </div>
     </div>
 
@@ -229,9 +197,6 @@
             var currentPath = window.location.pathname;
             var pathParts = currentPath.split('/');
             var sessionId = pathParts[pathParts.length - 1];
-
-            console.log('Current path:', currentPath);
-            console.log('Extracted session ID:', sessionId);
 
             // Validate that we have a numeric session ID
             if (sessionId && !isNaN(sessionId)) {

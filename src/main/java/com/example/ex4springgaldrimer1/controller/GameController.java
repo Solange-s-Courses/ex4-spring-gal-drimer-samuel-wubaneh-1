@@ -152,7 +152,6 @@ public class GameController {
             model.addAttribute("question", question);
             model.addAttribute("questionNumber", session.getQuestionsAnswered() + 1);
 
-
             // Verify what we're sending to template
             System.out.println("=== Model Attributes ===");
             System.out.println("session in model: " + (session != null ? "Session[id=" + session.getId() + "]" : "null"));
@@ -219,10 +218,14 @@ public class GameController {
         }
     }
 
-    // Game Results
+    // Game Results - FIXED VERSION
     @GetMapping("/results/{sessionId}")
     public String gameResults(@PathVariable Long sessionId, Model model, RedirectAttributes redirectAttributes) {
+        System.out.println("=== DEBUG gameResults ===");
+        System.out.println("Session ID: " + sessionId);
+
         User currentUser = userService.getCurrentUser();
+        System.out.println("Current user: " + (currentUser != null ? currentUser.getUsername() : "null"));
 
         if (currentUser == null) {
             return "redirect:/login";
@@ -230,6 +233,16 @@ public class GameController {
 
         try {
             GameSession session = gameService.getSessionById(sessionId);
+            System.out.println("Session found: " + (session != null));
+
+            if (session == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Game session not found.");
+                return "redirect:/game";
+            }
+
+            System.out.println("Session completed: " + session.getIsCompleted());
+            System.out.println("Session score: " + session.getCurrentScore());
+            System.out.println("Session user: " + session.getUser().getUsername());
 
             // Verify session belongs to current user
             if (!session.getUser().getId().equals(currentUser.getId())) {
@@ -239,20 +252,41 @@ public class GameController {
 
             // Ensure game is completed
             if (!session.getIsCompleted()) {
+                System.out.println("Completing unfinished game...");
                 session = gameService.endGame(session);
             }
 
-            // Calculate if this is a new high score
-            boolean isNewHighScore = session.getCurrentScore().equals(currentUser.getHighestGameScore());
+            // Calculate if this is a new high score - WITH NULL SAFETY
+            Integer currentHighScore = currentUser.getHighestGameScore();
+            Integer sessionScore = session.getCurrentScore();
+            boolean isNewHighScore = false;
 
+            if (sessionScore != null && currentHighScore != null) {
+                isNewHighScore = sessionScore.equals(currentHighScore);
+            }
+
+            System.out.println("Is new high score: " + isNewHighScore);
+
+            // Add attributes with null safety
             model.addAttribute("session", session);
+            model.addAttribute("gameSession", session); // Add both for template compatibility
             model.addAttribute("isNewHighScore", isNewHighScore);
-            model.addAttribute("userAverageScore", gameService.getUserAverageScore(currentUser));
-            model.addAttribute("globalAverageScore", gameService.getAverageScore());
+
+            // Add statistics with null safety
+            Double userAverage = gameService.getUserAverageScore(currentUser);
+            Double globalAverage = gameService.getAverageScore();
+
+            model.addAttribute("userAverageScore", userAverage != null ? userAverage : 0.0);
+            model.addAttribute("globalAverageScore", globalAverage != null ? globalAverage : 0.0);
+
+            System.out.println("All model attributes added successfully");
+            System.out.println("Returning to game/results template");
 
             return "game/results";
 
         } catch (Exception e) {
+            System.err.println("ERROR in gameResults: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Error loading results: " + e.getMessage());
             return "redirect:/game";
         }
