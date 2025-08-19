@@ -4,7 +4,7 @@
 
 video URL:https://www.youtube.com/watch?v=xtaCv8oZ3z4
 
-<h1>video file is also in the folder under the name video</h1>
+<h1>video file was also in the folder under the name video but was deleted because the size was 171 mgb</h1>
 
 the progream that i made is a site that also works as 
 a chatlog of prudacts and of stores 
